@@ -5,13 +5,12 @@
     "list": [
       {
         "accountType": "UNIFIED",
-        "totalEquity": "12000.00",
+        "totalEquity": "8000.00",
         "coin": [
-          { "coin": "SOL",  "usdValue": "4000.00", "walletBalance": "24.24"   },
-          { "coin": "DOGE", "usdValue": "3500.00", "walletBalance": "9210.5"  },
-          { "coin": "ETH",  "usdValue": "2500.00", "walletBalance": "0.714"   },
-          { "coin": "BTC",  "usdValue": "1500.00", "walletBalance": "0.01428" },
-          { "coin": "USDT", "usdValue": "500.00",  "walletBalance": "500"     }
+          { "coin": "WIF",   "usdValue": "2500.00", "walletBalance": "2941"       },
+          { "coin": "BONK",  "usdValue": "2000.00", "walletBalance": "100000000"  },
+          { "coin": "PEPE",  "usdValue": "2000.00", "walletBalance": "210526316"  },
+          { "coin": "FLOKI", "usdValue": "1500.00", "walletBalance": "12500000"   }
         ]
       }
     ]

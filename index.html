@@ -138,7 +138,7 @@
         <div class="card-label">Portfolio</div>
         <div class="port-sel">
           <button class="port-btn active" data-p="client_alpha" onclick="selPortfolio(this)">Alpha<br><span style="font-size:10px;font-weight:400">$24,860</span></button>
-          <button class="port-btn" data-p="client_beta" onclick="selPortfolio(this)">Beta<br><span style="font-size:10px;font-weight:400">$12,000</span></button>
+          <button class="port-btn" data-p="client_beta" onclick="selPortfolio(this)">Beta<br><span style="font-size:10px;font-weight:400">$8,000 · memes</span></button>
           <button class="port-btn" data-p="client_gamma" onclick="selPortfolio(this)">Gamma<br><span style="font-size:10px;font-weight:400">$50,000</span></button>
         </div>
         <div class="pie-wrap">
@@ -202,50 +202,445 @@
 
 <script>
 // ── Embedded data (schema v1) ──────────────────────────────────────────────
+/* BUILD:CALIB:START — generated from data/calibration.json by engine/build.py; do not edit by hand */
 const CALIB = {
-  btc_factor_vol_daily: 0.032, funding_annual: 0.10, mstr_borrow_annual: 0.05,
-  symbols: {
-    BTC:  { beta: 1.0,  idio_vol_daily: 0.0   },
-    ETH:  { beta: 1.15, idio_vol_daily: 0.021 },
-    SOL:  { beta: 1.6,  idio_vol_daily: 0.038 },
-    LINK: { beta: 1.4,  idio_vol_daily: 0.041 },
-    DOGE: { beta: 1.9,  idio_vol_daily: 0.070 },
-    USDT: { beta: 0.0,  idio_vol_daily: 0.0   },
+  "as_of": "2026-06-20T15:06:10Z",
+  "source": "bybit /v5/market/kline + /v5/market/funding/history (crypto); yfinance/Stooq (MSTR)",
+  "lookback_days": 365,
+  "btc_factor_vol_daily": 0.0224,
+  "funding_annual": 0.0077,
+  "mstr_borrow_annual": 0.05,
+  "symbols": {
+    "BTC": {
+      "beta": 1.0,
+      "idio_vol_daily": 0.0
+    },
+    "ETH": {
+      "beta": 1.353,
+      "idio_vol_daily": 0.0181
+    },
+    "SOL": {
+      "beta": 1.4076,
+      "idio_vol_daily": 0.0209
+    },
+    "LINK": {
+      "beta": 1.4306,
+      "idio_vol_daily": 0.0252
+    },
+    "DOGE": {
+      "beta": 1.377,
+      "idio_vol_daily": 0.0276
+    },
+    "PEPE": {
+      "beta": 1.6203,
+      "idio_vol_daily": 0.038
+    },
+    "FLOKI": {
+      "beta": 1.5935,
+      "idio_vol_daily": 0.039
+    },
+    "BONK": {
+      "beta": 1.6662,
+      "idio_vol_daily": 0.0442
+    },
+    "WIF": {
+      "beta": 1.7643,
+      "idio_vol_daily": 0.0428
+    },
+    "USDT": {
+      "beta": 0.0,
+      "idio_vol_daily": 0.0
+    }
   },
-  hedge_instruments: { MSTR: { beta: 1.8, idio_vol_daily: 0.045 } },
-  model_version: 'v1',
+  "hedge_instruments": {
+    "MSTR": {
+      "beta": 1.3683,
+      "idio_vol_daily": 0.0296
+    }
+  },
+  "model_version": "v1"
 };
+/* BUILD:CALIB:END */
 
+/* BUILD:BOOKS:START — generated from data/portfolios/*.json by engine/build.py; do not edit by hand */
 const BOOKS = {
-  client_alpha: { result: { list: [{ totalEquity: '24860.00', coin: [
-    { coin: 'BTC',  usdValue: '9000.00' }, { coin: 'ETH',  usdValue: '6500.00' },
-    { coin: 'SOL',  usdValue: '5360.00' }, { coin: 'USDT', usdValue: '4000.00' },
-  ]}]}},
-  client_beta: { result: { list: [{ totalEquity: '12000.00', coin: [
-    { coin: 'SOL',  usdValue: '4000.00' }, { coin: 'DOGE', usdValue: '3500.00' },
-    { coin: 'ETH',  usdValue: '2500.00' }, { coin: 'BTC',  usdValue: '1500.00' },
-    { coin: 'USDT', usdValue: '500.00'  },
-  ]}]}},
-  client_gamma: { result: { list: [{ totalEquity: '50000.00', coin: [
-    { coin: 'BTC',  usdValue: '20000.00' }, { coin: 'ETH', usdValue: '8000.00' },
-    { coin: 'USDT', usdValue: '22000.00' },
-  ]}]}},
+  "client_alpha": {
+    "retCode": 0,
+    "retMsg": "OK",
+    "result": {
+      "list": [
+        {
+          "accountType": "UNIFIED",
+          "totalEquity": "24860.00",
+          "coin": [
+            {
+              "coin": "BTC",
+              "usdValue": "9000.00",
+              "walletBalance": "0.0857"
+            },
+            {
+              "coin": "ETH",
+              "usdValue": "6500.00",
+              "walletBalance": "1.857"
+            },
+            {
+              "coin": "SOL",
+              "usdValue": "5360.00",
+              "walletBalance": "32.48"
+            },
+            {
+              "coin": "USDT",
+              "usdValue": "4000.00",
+              "walletBalance": "4000"
+            }
+          ]
+        }
+      ]
+    },
+    "time": 1718879290000
+  },
+  "client_beta": {
+    "retCode": 0,
+    "retMsg": "OK",
+    "result": {
+      "list": [
+        {
+          "accountType": "UNIFIED",
+          "totalEquity": "8000.00",
+          "coin": [
+            {
+              "coin": "WIF",
+              "usdValue": "2500.00",
+              "walletBalance": "2941"
+            },
+            {
+              "coin": "BONK",
+              "usdValue": "2000.00",
+              "walletBalance": "100000000"
+            },
+            {
+              "coin": "PEPE",
+              "usdValue": "2000.00",
+              "walletBalance": "210526316"
+            },
+            {
+              "coin": "FLOKI",
+              "usdValue": "1500.00",
+              "walletBalance": "12500000"
+            }
+          ]
+        }
+      ]
+    },
+    "time": 1718879290000
+  },
+  "client_gamma": {
+    "retCode": 0,
+    "retMsg": "OK",
+    "result": {
+      "list": [
+        {
+          "accountType": "UNIFIED",
+          "totalEquity": "50000.00",
+          "coin": [
+            {
+              "coin": "BTC",
+              "usdValue": "20000.00",
+              "walletBalance": "0.1905"
+            },
+            {
+              "coin": "ETH",
+              "usdValue": "8000.00",
+              "walletBalance": "2.286"
+            },
+            {
+              "coin": "USDT",
+              "usdValue": "22000.00",
+              "walletBalance": "22000"
+            }
+          ]
+        }
+      ]
+    },
+    "time": 1718879290000
+  }
 };
+/* BUILD:BOOKS:END */
 
-// ── PRNG: mulberry32 ──────────────────────────────────────────────────────
-function mulberry32(seed) {
-  return () => {
-    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+// ── Canonical Monte Carlo engine ──────────────────────────────────────────
+/* BUILD:SIM:START — generated from web/veylix-sim.js by engine/build.py; do not edit by hand */
+/*
+ * veylix-sim.js — Veylix Monte Carlo (browser engine)
+ *
+ * Faithful JS implementation of the model in assets/veylix_engine_handoff.md (§3).
+ * Runs client-side on every slider/toggle change — no backend, no network round-trip.
+ *
+ * Usage (browser, <script src="veylix-sim.js">):
+ *     const pf  = VeylixSim.parsePortfolio(walletBalanceJson);
+ *     const out = VeylixSim.simulate(pf, calibrationJson, { h: 0.5, instrument: "BTC", horizonDays: 30 });
+ *
+ * Cross-check (Node):  node web/veylix-sim.js   → prints stats for the demo data.
+ *
+ * Determinism (UX §6/§11): fixed seed ⇒ identical inputs produce an identical cone.
+ */
+(function (root) {
+  "use strict";
+
+  var DEFAULT_SEED = 0x5eed5;
+  var DEFAULT_PATHS = 3000;
+
+  // --- deterministic PRNG: mulberry32 → uniform [0,1) ---------------------- //
+  function mulberry32(a) {
+    a = a >>> 0;
+    return function () {
+      a = (a + 0x6d2b79f5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // standard-normal generator (Marsaglia polar), caches the spare draw
+  function gaussianFactory(rng) {
+    var spare = null;
+    return function (mean, std) {
+      mean = mean || 0;
+      std = std == null ? 1 : std;
+      if (spare !== null) {
+        var s0 = spare;
+        spare = null;
+        return mean + std * s0;
+      }
+      var u, v, s;
+      do {
+        u = rng() * 2 - 1;
+        v = rng() * 2 - 1;
+        s = u * u + v * v;
+      } while (s === 0 || s >= 1);
+      var mul = Math.sqrt((-2 * Math.log(s)) / s);
+      spare = v * mul;
+      return mean + std * (u * mul);
+    };
+  }
+
+  // linear-interpolation percentile (matches numpy default) on an ascending array
+  function percentile(sortedAsc, p) {
+    var n = sortedAsc.length;
+    if (n === 0) return NaN;
+    var idx = (p / 100) * (n - 1);
+    var lo = Math.floor(idx);
+    var hi = Math.ceil(idx);
+    if (lo === hi) return sortedAsc[lo];
+    return sortedAsc[lo] + (sortedAsc[hi] - sortedAsc[lo]) * (idx - lo);
+  }
+
+  // --- inputs -------------------------------------------------------------- //
+  function parsePortfolio(raw) {
+    var acct = raw.result.list[0];
+    var holdings = {};
+    acct.coin.forEach(function (c) {
+      holdings[c.coin] = parseFloat(c.usdValue);
+    });
+    return { totalEquity: parseFloat(acct.totalEquity), holdings: holdings };
+  }
+
+  // --- portfolio statistics (deterministic, no RNG) ------------------------ //
+  function portfolioStats(portfolio, calibration) {
+    var sym = calibration.symbols;
+    var sigmaBtc = calibration.btc_factor_vol_daily;
+    var total = portfolio.totalEquity;
+    var gross = 0,
+      idioVar = 0,
+      weights = {},
+      drivers = {};
+    Object.keys(portfolio.holdings).forEach(function (coin) {
+      if (!(coin in sym)) throw new Error(coin + " missing from calibration.symbols");
+      var w = portfolio.holdings[coin] / total;
+      var beta = sym[coin].beta;
+      var idio = sym[coin].idio_vol_daily;
+      weights[coin] = w;
+      gross += w * beta;
+      idioVar += (w * idio) * (w * idio);
+      drivers[coin] = w * w * (beta * beta * sigmaBtc * sigmaBtc + idio * idio);
+    });
+    var top = null,
+      best = -Infinity;
+    Object.keys(drivers).forEach(function (c) {
+      if (drivers[c] > best) {
+        best = drivers[c];
+        top = c;
+      }
+    });
+    return { grossLoading: gross, portIdioVar: idioVar, weights: weights, topDriver: top };
+  }
+
+  // --- hedge economics ----------------------------------------------------- //
+  function carryPerDay(calibration, h, instrument) {
+    if (instrument === "BTC") return (calibration.funding_annual * h) / 365;
+    if (instrument === "MSTR") {
+      var bM = calibration.hedge_instruments.MSTR.beta;
+      return (calibration.mstr_borrow_annual * (h / bM)) / 365;
+    }
+    throw new Error("unknown instrument " + instrument);
+  }
+
+  function hedgeIdioVar(calibration, h, instrument) {
+    if (instrument === "MSTR") {
+      var m = calibration.hedge_instruments.MSTR;
+      var k = h / m.beta;
+      return k * k * m.idio_vol_daily * m.idio_vol_daily;
+    }
+    return 0;
+  }
+
+  // --- simulation ---------------------------------------------------------- //
+  function simulate(portfolio, calibration, opts) {
+    opts = opts || {};
+    var h = opts.h || 0;
+    var instrument = opts.instrument || "BTC";
+    var H = opts.horizonDays || 30;
+    var nPaths = opts.nPaths || DEFAULT_PATHS;
+    var seed = opts.seed == null ? DEFAULT_SEED : opts.seed;
+
+    var st = portfolioStats(portfolio, calibration);
+    var sigmaBtc = calibration.btc_factor_vol_daily;
+    var net = st.grossLoading - h;
+    var carryDay = carryPerDay(calibration, h, instrument);
+    var idioStd = Math.sqrt(st.portIdioVar + hedgeIdioVar(calibration, h, instrument));
+
+    var normal = gaussianFactory(mulberry32(seed));
+
+    // value paths, normalised to 1.0 at t=0
+    var paths = new Array(nPaths);
+    for (var i = 0; i < nPaths; i++) {
+      var arr = new Float64Array(H + 1);
+      arr[0] = 1.0;
+      var v = 1.0;
+      for (var d = 1; d <= H; d++) {
+        var r = net * normal(0, sigmaBtc) + normal(0, idioStd) - carryDay;
+        if (r < -0.99) r = -0.99;
+        v *= 1 + r;
+        arr[d] = v;
+      }
+      paths[i] = arr;
+    }
+
+    // cone: return percentiles per day
+    var pcts = [5, 25, 50, 75, 95];
+    var cone = { p5: [], p25: [], p50: [], p75: [], p95: [] };
+    var col = new Float64Array(nPaths);
+    for (var day = 0; day <= H; day++) {
+      for (var j = 0; j < nPaths; j++) col[j] = paths[j][day];
+      var sorted = col.slice().sort();
+      for (var pi = 0; pi < pcts.length; pi++) {
+        cone["p" + pcts[pi]].push(percentile(sorted, pcts[pi]) - 1.0);
+      }
+    }
+
+    // final returns + per-path max drawdown
+    var finals = new Float64Array(nPaths);
+    var maxdd = new Float64Array(nPaths);
+    var lossCount = 0;
+    for (var k = 0; k < nPaths; k++) {
+      var p = paths[k];
+      finals[k] = p[H] - 1.0;
+      if (finals[k] < -0.25) lossCount++;
+      var rmax = p[0],
+        dd = 0;
+      for (var t = 0; t <= H; t++) {
+        if (p[t] > rmax) rmax = p[t];
+        var cur = p[t] / rmax - 1;
+        if (cur < dd) dd = cur;
+      }
+      maxdd[k] = dd;
+    }
+    var fSorted = finals.slice().sort();
+    var ddSorted = maxdd.slice().sort();
+
+    var factorVar = net * net * sigmaBtc * sigmaBtc;
+    var denom = factorVar + st.portIdioVar;
+
+    return {
+      inputs: { h: h, instrument: instrument, horizonDays: H, nPaths: nPaths, seed: seed },
+      grossLoading: st.grossLoading,
+      effectiveBeta: net,
+      btcVarShare: denom > 0 ? factorVar / denom : 0,
+      topDriver: st.topDriver,
+      carryOverHorizonPct: carryDay * H, // + = cost
+      cone: cone, // daily return percentiles, length H+1
+      final: {
+        medianReturn: percentile(fSorted, 50),
+        worstCase5pctReturn: percentile(fSorted, 5), // 1-in-20
+        p95Return: percentile(fSorted, 95),
+        probLossGt25pct: lossCount / nPaths,
+        typicalMaxDrawdown: percentile(ddSorted, 50),
+      },
+    };
+  }
+
+  var api = {
+    simulate: simulate,
+    parsePortfolio: parsePortfolio,
+    portfolioStats: portfolioStats,
+    carryPerDay: carryPerDay,
+    DEFAULT_SEED: DEFAULT_SEED,
   };
-}
 
-// ── Simulation engine (veylix-sim) ────────────────────────────────────────
-function runSim(calib, portfolio, hedge, instrument, H) {
-  const N = 3000, SEED = 0x5EED5;
-  const book = portfolio.result.list[0];
+  // browser global
+  root.VeylixSim = api;
+  // Node / CommonJS (for cross-checking against montecarlo.py)
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+
+  // --- Node self-test: node web/veylix-sim.js ------------------------------ //
+  if (typeof require !== "undefined" && typeof module !== "undefined" && require.main === module) {
+    var fs = require("fs");
+    var path = require("path");
+    var dataDir = path.join(__dirname, "..", "data");
+    var cal = JSON.parse(fs.readFileSync(path.join(dataDir, "calibration.json")));
+    var pct = function (x) {
+      return (x >= 0 ? "+" : "") + (x * 100).toFixed(2) + "%";
+    };
+    console.log(
+      "calibration model_version=" + cal.model_version + "  funding=" + cal.funding_annual +
+        "  mstr_borrow=" + cal.mstr_borrow_annual + "\n"
+    );
+    fs.readdirSync(path.join(dataDir, "portfolios"))
+      .filter(function (f) {
+        return f.endsWith(".json");
+      })
+      .sort()
+      .forEach(function (f) {
+        var pf = parsePortfolio(JSON.parse(fs.readFileSync(path.join(dataDir, "portfolios", f))));
+        var base = simulate(pf, cal, { h: 0 });
+        console.log(
+          "=== " + f.replace(".json", "") + "  ($" + pf.totalEquity.toLocaleString() + ") ==="
+        );
+        console.log(
+          "  gross_loading=" + base.grossLoading.toFixed(3) + "  top_driver=" + base.topDriver +
+            "  btc_var_share@h0=" + (base.btcVarShare * 100).toFixed(1) + "%"
+        );
+        ["BTC", "MSTR"].forEach(function (inst) {
+          var r = simulate(pf, cal, { h: 0.5, instrument: inst, horizonDays: 30 });
+          console.log(
+            "  [" + inst + " h=0.5/30d] eff_beta=" + r.effectiveBeta.toFixed(3) +
+              "  carry=" + pct(r.carryOverHorizonPct) +
+              "  median=" + pct(r.final.medianReturn) +
+              "  1-in-20=" + pct(r.final.worstCase5pctReturn) +
+              "  P(<-25%)=" + (r.final.probLossGt25pct * 100).toFixed(1) + "%" +
+              "  typ_maxDD=" + pct(r.final.typicalMaxDrawdown)
+          );
+        });
+        console.log("");
+      });
+  }
+})(typeof globalThis !== "undefined" ? globalThis : this);
+/* BUILD:SIM:END */
+
+// ── UI adapter: maps VeylixSim.simulate() to the shape the renderers expect ──
+function runSim(calib, port, hedge, instrument, H) {
+  const r = VeylixSim.simulate(VeylixSim.parsePortfolio(port), calib,
+                               { h: hedge, instrument: instrument, horizonDays: H });
+  const book = port.result.list[0];
   const equity = parseFloat(book.totalEquity);
   const coins = book.coin.map(c => ({
     sym: c.coin,
@@ -253,84 +648,27 @@ function runSim(calib, portfolio, hedge, instrument, H) {
     b:   (calib.symbols[c.coin] || {}).beta          ?? 0,
     iv:  (calib.symbols[c.coin] || {}).idio_vol_daily ?? 0,
   }));
-
-  const gl     = coins.reduce((s, c) => s + c.w * c.b, 0); // gross_loading
-  const bv     = calib.btc_factor_vol_daily;
-  const h      = hedge;
-  const bM     = calib.hedge_instruments.MSTR.beta;
-  const ivM    = calib.hedge_instruments.MSTR.idio_vol_daily;
-  const carryD = instrument === 'BTC'
-    ? calib.funding_annual * h / 365
-    : calib.mstr_borrow_annual * (h / bM) / 365;
-
-  const rand = mulberry32(SEED);
-  let spare = null;
-  const gauss = () => {
-    if (spare !== null) { const v = spare; spare = null; return v; }
-    const u1 = Math.max(rand(), 1e-300), u2 = rand();
-    const r = Math.sqrt(-2 * Math.log(u1));
-    spare = r * Math.sin(2 * Math.PI * u2);
-    return r * Math.cos(2 * Math.PI * u2);
-  };
-
-  // flat array: pathVals[p*(H+1)+t] = portfolio value at day t for path p
-  const pv  = new Float64Array(N * (H + 1));
-  const pdd = new Float64Array(N);
-
-  for (let p = 0; p < N; p++) {
-    let val = equity, peak = equity, maxDD = 0;
-    pv[p * (H + 1)] = val;
-    for (let t = 0; t < H; t++) {
-      const F = gauss() * bv;
-      let r = (gl - h) * F;
-      for (const c of coins) if (c.iv > 0) r += c.w * gauss() * c.iv;
-      if (instrument === 'MSTR' && h > 0) r -= (h / bM) * gauss() * ivM;
-      r = Math.max(r - carryD, -0.99);
-      val *= (1 + r);
-      if (val > peak) peak = val;
-      else { const dd = (peak - val) / peak; if (dd > maxDD) maxDD = dd; }
-      pv[p * (H + 1) + t + 1] = val;
-    }
-    pdd[p] = maxDD;
-  }
-
-  // cone percentiles at each day
-  const cone = [];
-  const col  = new Float64Array(N);
-  for (let t = 0; t <= H; t++) {
-    for (let p = 0; p < N; p++) col[p] = (pv[p * (H + 1) + t] / equity - 1) * 100;
-    col.sort();
-    cone.push({
-      p5:  col[Math.floor(N * 0.05)],
-      p25: col[Math.floor(N * 0.25)],
-      p50: col[Math.floor(N * 0.50)],
-      p75: col[Math.floor(N * 0.75)],
-      p95: col[Math.floor(N * 0.95)],
-    });
-  }
-
-  // final stats
-  const fin = new Float64Array(N);
-  for (let p = 0; p < N; p++) fin[p] = pv[p * (H + 1) + H];
-  fin.sort(); pdd.sort();
-
-  const fP5  = (fin[Math.floor(N * 0.05)] / equity - 1) * 100;
-  const fP50 = (fin[Math.floor(N * 0.50)] / equity - 1) * 100;
-  const mDD  = pdd[Math.floor(N * 0.50)] * 100;
-  let lossN = 0;
-  for (let p = 0; p < N; p++) if (fin[p] < equity * 0.75) lossN++;
-
+  const cone = r.cone.p5.map((_, t) => ({
+    p5:  r.cone.p5[t]  * 100, p25: r.cone.p25[t] * 100, p50: r.cone.p50[t] * 100,
+    p75: r.cone.p75[t] * 100, p95: r.cone.p95[t] * 100,
+  }));
   return {
-    cone, fP5, fP50, mDD,
-    chanceLoss: lossN / N * 100,
-    gl, coins, equity, h, instrument,
-    effectiveBeta: gl - h,
-    carryD, carryPct: carryD * H, carryDollar: carryD * H * equity,
+    cone,
+    fP5:  r.final.worstCase5pctReturn * 100,
+    fP50: r.final.medianReturn * 100,
+    mDD:  -r.final.typicalMaxDrawdown * 100,
+    chanceLoss: r.final.probLossGt25pct * 100,
+    gl: r.grossLoading, coins, equity,
+    h: hedge, instrument,
+    effectiveBeta: r.effectiveBeta,
+    carryPct: r.carryOverHorizonPct,
+    carryDollar: r.carryOverHorizonPct * equity,
   };
 }
 
 // ── Chart rendering ───────────────────────────────────────────────────────
-const COIN_COLORS = { BTC:'#f5a524', ETH:'#4fd1c5', SOL:'#a78bfa', DOGE:'#fb923c', LINK:'#60a5fa', USDT:'#4b5563' };
+const COIN_COLORS = { BTC:'#f5a524', ETH:'#4fd1c5', SOL:'#a78bfa', DOGE:'#fb923c', LINK:'#60a5fa', USDT:'#4b5563',
+  WIF:'#ec4899', BONK:'#f97316', PEPE:'#22c55e', FLOKI:'#eab308' };
 
 function renderCone(cone, H) {
   const W=800, SH=270, ML=50, MR=16, MT=14, MB=32;
