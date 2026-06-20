@@ -4,8 +4,6 @@
 **Goal:** everything you need to build the browser app against, with zero further questions.
 No backend — both inputs are **static JSON files** you load and bake into the offline build.
 
-See also: [`implementation_plan.md`](implementation_plan.md) (engine plan), [`../ux/UX requirements`](../ux/UX%20requirements) (your UX spec).
-
 ---
 
 ## 1. Who computes what
