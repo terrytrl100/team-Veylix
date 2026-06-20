@@ -1,0 +1,246 @@
+# Veylix — UX Requirements (MVP)
+
+**Pre-trade risk visibility for retail crypto.** Veylix shows a retail investor how buying, selling, holding, or hedging reshapes the *distribution* of where their portfolio could land — before they act. It is an **education and transparency tool, not an advice tool**: it surfaces and explains risk in plain language and never recommends a position.
+
+Status: hackathon MVP · single-page web app (desktop-first, responsive to mobile) · Encode / BGA AI Trading & Strategy track. **This doc reflects the current build** (see the standalone HTML in the repo and §13). Where the build already meets a requirement it's noted; the open gaps are concentrated in §10 (accessibility) and §11 (acceptance criteria).
+
+---
+
+## 1. Scope
+
+**In scope (MVP)**
+- One screen, no navigation. All interaction is live recalculation, not page transitions.
+- A sample portfolio the user edits via sliders (no wallet/exchange connection yet).
+- Client-side Monte Carlo risk simulation (~3,000 paths) with a fixed seed.
+- Plain-language explanation of every number shown, in both % and dollar terms.
+
+**Non-goals (explicitly out for MVP)**
+- No investment advice or recommendations. No "you should" anywhere.
+- No trade execution, custody, or order routing.
+- No login/auth, no persistence, no real portfolio/exchange data.
+- No price prediction. We model risk and dispersion, not expected returns.
+
+---
+
+## 2. Primary user & guiding principle
+
+**User:** an experienced, risk-tolerant retail crypto investor. They already take volatile positions in one tap; what they lack is the pre-trade risk visibility institutions take for granted.
+
+**Job to be done:** *"Before I act, show me how this move changes my downside — in terms I can actually read."*
+
+**Guiding UX principle:** every element on the screen must close a specific information gap between this user and an institution. If a component doesn't reduce that gap or help the user read their risk, cut it.
+
+---
+
+## 3. Core interaction (the spine)
+
+This is the one flow that must feel effortless; everything else supports it.
+
+1. **First load** — the screen opens populated: "Current" portfolio preset, 30-day horizon, 0% hedge. The outcome cone, the worst-case figures, and all five stat tiles are already rendered. No empty state, no "click to begin," no spinner beyond a flash.
+2. **Adjust** — the user drags an allocation slider, the BTC hedge slider, the funding rate, or changes horizon.
+3. **See the consequence** — the cone, the worst-case/median figures, the five tiles, and the "Why these numbers" sentence all recompute together, live.
+
+**The demo moment (must land):** with "Current" loaded, dragging the BTC hedge slider up visibly pulls the coral downside tail *upward* while the median line barely moves. The "1-in-20" number — in both % and dollars — improves in real time. Switching presets (Current → Balanced) teaches the same lesson for diversification. This single interaction is the pitch — protect the bad case, and see what it costs.
+
+---
+
+## 4. Information architecture (single screen)
+
+Top to bottom on desktop; controls drop below the chart on mobile.
+
+1. **Header** — Veylix wordmark + an "Educational · not investment advice" pill + a **portfolio-value pill** + a one-line lede.
+2. **Outcome cone** (hero, ~60% of screen width on desktop), with the worst-case and median figures pinned above it.
+3. **Controls panel** (right of cone on desktop, stacked below on mobile).
+4. **Stat tiles** — a row of five.
+5. **"Why these numbers"** — the live explanation panel.
+6. **Footer** — full disclaimer.
+
+Responsive: single column below ~860px. Cone full-width, then controls, then tiles (2-up), then explanation. Usable down to 375px.
+
+---
+
+## 5. Component requirements
+
+### 5.0 Header
+- **Wordmark:** "Veylix" with a two-tone treatment — "Vey" in ink, "lix" in amber — beside a small logo mark slot.
+- **Educational pill:** "Educational · not investment advice" with an amber dot. Always visible.
+- **Portfolio-value pill:** the total portfolio value (e.g. "$24,860 portfolio"). This value is the **basis for every dollar figure on screen** (worst-case $, the right-hand chart axis). Should be user-settable so the dollar amounts reflect the user's own portfolio size; defaults to a sample value.
+- **Lede:** "You can buy, sell, or hold in one tap — see the consequence first. Veylix shows how a move reshapes your downside before you make it."
+
+### 5.1 Outcome cone (the hero)
+- Monte Carlo distribution of portfolio value over the horizon, drawn as percentile bands (5 / 25 / 50 / 75 / 95) across time. Hand-rendered on Canvas 2D at device-pixel resolution.
+- **Semantic encoding:** downside band (5th–25th) tinted coral; middle band (25th–75th) neutral; upper band (75th–95th) tinted teal. Median (50th) as an amber line. The 5th-percentile boundary drawn as a distinct coral line with an endpoint dot.
+- A dashed horizontal reference line at the starting value (break-even).
+- **Pinned figures above the chart:**
+  - Eyebrow: "1-IN-20 WORST CASE · [horizon]".
+  - The worst-case return shown **large, in coral** — the number the eye lands on first.
+  - A human-readable sub-line pairing it with dollars: e.g. "A bad month — your portfolio could fall to $15,485" (see §7 for the horizon→phrase mapping).
+  - **Median** shown top-right of the chart, labelled, **in amber** (e.g. "MEDIAN −4%").
+- **Dual axis:** **% return on the left** (e.g. +55% / +30% / +5% / −20% / −45%) and the **equivalent dollar value on the right** (the same percentages applied to the portfolio value). The two must stay consistent.
+- X-axis: "today → Nd".
+- Caption: methodology + sim count, e.g. "~3,000 simulated paths · zero-drift volatility model — risk, not prediction".
+
+### 5.2 Portfolio: presets + allocation sliders
+- Three preset buttons: **Current** (concentrated/high-risk, the default), **Balanced**, **BTC-heavy**, under a "PRESET" label ("starting points"). Selecting one sets all allocations and visibly marks itself active (amber fill).
+- Five allocation sliders under an "ALLOCATION" label ("% of portfolio"): BTC, ETH, SOL, Mid-cap alt, Microcap/meme. Each row carries a small **asset-identity swatch** and shows its current **% share**. Editing any slider deselects the active preset (user is now "Custom").
+- Shares are normalised to 100% for the model; display the normalised %.
+- **Colour guardrail:** asset swatches (BTC amber, ETH periwinkle, SOL mint, Mid-cap violet, Microcap coral) identify assets; the chart's coral/teal carry *meaning* (downside/upside). Keep swatches small and quiet so a coral asset dot never reads as "downside" or a mint dot as "upside." Identity and semantics must not blur.
+
+### 5.3 BTC hedge slider
+- Range 0–100%. Represents the share of the portfolio's net BTC-beta exposure offset by a short-BTC position.
+- Styled in the amber accent (it's the protective lever — visually distinct from allocations).
+- Label and value both in amber.
+- **Helper microcopy** beneath it: "A short BTC position that offsets market-wide moves. Drag it up and watch the coral downside tail lift — while the median barely moves."
+
+### 5.4 Hedge funding rate + carry readout
+- A slider directly beneath the hedge slider (they are a pair), annualised %. Range ≈ −25% to +75%/yr, default **+10%/yr**.
+- Labelled as the **carry cost of holding the BTC short**, with a one-line note: *positive = you pay to hold the hedge; negative = funding favours shorts and you're paid to hold it.*
+- Beneath it, a live readout: **"Hedge carry over [horizon]: ±X.X%"** — **coral when it's a cost, teal when it's a credit** — the cumulative funding drag/credit as a % of the portfolio over the selected horizon.
+- Teaching point this exists to surface: hedge economics depend on funding. A high funding rate erodes the benefit of hedging; over-hedging in an expensive-funding regime bleeds the median. This is a real institutional asymmetry made visible.
+
+### 5.5 Horizon toggle
+- Segmented control: 7d / 30d / 90d. Default 30d. Changes the simulation horizon, the carry window, and the worst-case phrasing.
+
+### 5.6 Stat tiles (five)
+Each tile is a label + a large monospace number. Each must have a plain-language explanation available (tooltip or inline) of what it means, in user terms.
+
+| Tile | Meaning shown to the user | Colour |
+|---|---|---|
+| Median outcome | Your most-likely result over the horizon | neutral (ink) |
+| 1-in-20 downside | A typical bad day — worse than this 5% of the time | coral |
+| Typical max drawdown | The biggest peak-to-trough drop along the way | coral |
+| Chance of losing >25% | How often a quarter or more is wiped out | neutral (ink) |
+| Effective BTC beta | How hard your portfolio still moves with BTC after hedging | amber |
+
+### 5.7 "Why these numbers" panel
+- A live, plain-language sentence (not a static blurb). Rules for what it must say:
+  - Name the **biggest risk driver** (the asset contributing most volatility) and its share.
+  - When a hedge is on, state what it does to the downside floor *and* its carry cost at the current funding rate — e.g. *"The 50% hedge lifts your 1-in-20 floor from −42% to −31%, but at +10%/yr funding it carries a ~0.9% cost over 30 days, trimming your median."*
+  - When no hedge is on, name the unhedged BTC-beta exposure and invite the user to try the hedge slider.
+- Rewrites itself whenever any input changes. Key figures emphasised inline (downside in coral, hedge/funding in amber).
+
+### 5.8 Disclaimer
+- Footer, visible without scrolling on desktop. Must contain the words **"not investment advice."** Exact wording in §7.
+
+---
+
+## 6. States & edge cases
+
+- **First load:** populated (Current / 30d / 0% hedge). Never blank.
+- **Compute:** recompute on every input change. Keep it non-blocking; if ~3,000 paths can't return within ~150ms on a slider drag, recompute on pointer-up rather than mid-drag, but never freeze the UI.
+- **Determinism:** fixed random seed — identical inputs produce an identical cone. The cone must respond to the user's changes, *not* to simulation noise.
+- **Weights = 0:** if all allocations are zeroed, fall back to 100% BTC rather than dividing by zero.
+- **Extreme inputs:** clamp single-day returns so portfolio value can't go negative; very high-vol / high-funding settings should degrade gracefully, not break the chart scale or the dual-axis alignment.
+- **Negative funding:** carry readout flips to a credit (teal) and the explanation reflects that the hedge is being paid for by funding.
+
+---
+
+## 7. Content & tone
+
+**Voice:** institutional-grade, but legible to a non-institution. Name things by what the user controls, in active voice. A label labels; an example demonstrates; nothing does double duty. Specific over clever. Pair every key risk number with a dollar amount and a human frame — the number is the fact, the dollars and the phrase make it land.
+
+**Lede (header):** "You can buy, sell, or hold in one tap — see the consequence first. Veylix shows how a move reshapes your downside before you make it."
+
+**Worst-case sub-line — horizon → phrase:**
+- 7d → "A bad week — your portfolio could fall to $X"
+- 30d → "A bad month — your portfolio could fall to $X"
+- 90d → "A bad quarter — your portfolio could fall to $X"
+
+**Methodology caption (under cone):** "~3,000 simulated paths · zero-drift volatility model — risk, not prediction."
+
+**Hedge helper:** "A short BTC position that offsets market-wide moves. Drag it up and watch the coral downside tail lift — while the median barely moves."
+
+**Footer disclaimer (exact):**
+> Simulated outcomes from modelled volatility, not forecasts. Veylix surfaces and explains risk; it does not recommend any position. Educational use only — not investment advice.
+
+---
+
+## 8. Visual system (handoff)
+
+Dark, minimal, precise. Spend boldness only on the cone; keep everything else quiet.
+
+**Palette**
+- Background deep cool-ink (near-black, slightly blue) · lifted panel surfaces · hairline borders.
+- Text: primary ink, secondary muted, tertiary/labels dim.
+- **Accent (interactive / hero lever): amber `#f5a524`** — used sparingly; a nod to the trading-terminal lineage this tool brings to retail.
+- **Semantic only: downside coral `#ff6f6f`, upside teal `#4fd1c5`** — never decorative in the chart.
+- **Asset-identity swatches** (allocation rows only): BTC amber, ETH periwinkle, SOL mint, Mid-cap violet, Microcap coral. Small and quiet — see the §5.2 colour guardrail.
+
+**Type** (as built)
+- Headings: **Space Grotesk** (clean, confident display).
+- Body / UI: **Manrope**.
+- All numbers: **JetBrains Mono** with **tabular figures** (`font-variant-numeric: tabular-nums`) so values don't change width as they update.
+- Micro-labels: uppercase, wide tracking (~0.16em), ~10–11px, tertiary colour.
+
+**Layout:** generous whitespace, hairline dividers, soft radii, no decorative gradients or shadows. Minimal directions live or die on spacing and type precision — get those exact. Theme driven by CSS custom properties so colours/fonts can be swapped live.
+
+---
+
+## 9. Transparency & trust UX (the BGA differentiator)
+
+This is a scoring lever, not just polish. The product must *look and feel* auditable and honest:
+- **Methodology is always on screen** (the caption), never hidden.
+- **Every number is explained** in plain language and in dollars (the "Why" panel + tile explanations + the worst-case sub-line) — no unexplained black-box outputs.
+- **Honest trade-offs:** hedging shows its *cost* (the carry readout), not only its benefit. The tool never implies a free lunch.
+- **No-advice framing is surfaced**, not buried in a ToS — the header pill and footer make the posture visible.
+- (Roadmap, ties to Sui track) Storing each simulation run — inputs, seed, output distribution — so any readout is independently reproducible would make the risk numbers verifiable, not just transparent.
+
+---
+
+## 10. Accessibility & quality floor
+
+- Full keyboard operability: every slider, toggle, and preset reachable and operable by keyboard, with visible focus rings.
+- Respect `prefers-reduced-motion` (no entrance/transition animation when set).
+- Contrast meets WCAG AA for text and key UI against the dark background.
+- Canvas chart needs a non-visual equivalent: expose the key figures (worst case, median, drawdown) as readable text near the chart, not only as pixels.
+- Responsive and usable down to 375px width.
+- No layout jitter: tabular figures, fixed control widths — numbers update in place.
+- Compute never blocks scrolling or input.
+
+---
+
+## 11. Acceptance criteria (Definition of Done)
+
+- [ ] First load is fully populated (Current / 30d / 0% hedge) — cone + worst-case/median + all five tiles rendered, no spinner beyond a flash.
+- [ ] Any input change updates the cone, the worst-case/median figures, all tiles, and the "Why" sentence together, in place, without width jitter.
+- [ ] On "Current", dragging hedge 0→100% visibly raises the coral downside tail and improves the "1-in-20" number (% and $); median moves only slightly.
+- [ ] Funding rate changes the carry readout's magnitude and sign; a negative rate flips it to a teal credit and the explanation follows.
+- [ ] The right-hand dollar axis and worst-case dollar figure stay consistent with the stated portfolio value.
+- [ ] Worst-case sub-line uses the correct horizon phrase (week / month / quarter).
+- [ ] Every stat tile exposes a plain-language explanation of what it means.
+- [ ] "Why these numbers" names the top risk driver and the hedge's effect + cost, and updates live.
+- [ ] Disclaimer is visible without scrolling on desktop and contains "not investment advice."
+- [ ] Fully keyboard-operable with visible focus; respects reduced motion; key figures available as text (not canvas-only); usable at 375px.
+- [ ] Fixed seed: identical inputs → identical cone (no re-render jitter).
+
+---
+
+## 12. Out of scope now / next
+
+- Connect real holdings (wallet address via WalletConnect, or Bybit account import) to replace the sample sliders.
+- Per-asset on-chain risk flags (liquidity depth, holder concentration) for the long-tail assets.
+- Persisted scenarios / shareable risk snapshots.
+- On-chain auditability of simulation runs (Walrus) and self-directed hedge execution (DeepBook) — only if the core lands first.
+
+---
+
+## 13. Implementation (as built)
+
+Framework-free core, no build step, no backend — it all runs in the browser.
+
+- **Vanilla JavaScript + HTML + CSS** for the whole dashboard (sim, controls, live recompute), kept framework-free so the Monte Carlo recompute stays fast on every slider drag.
+- **HTML5 Canvas 2D** for the outcome cone — hand-drawn percentile bands, lines, and endpoint dot, redrawn each frame at device-pixel resolution.
+- **CSS custom properties** for the whole theme, so colours/fonts/panel styles can be swapped live.
+- **Google Fonts** — Space Grotesk (headings), Manrope (body), JetBrains Mono (tabular numbers).
+- **React + Babel** only for the small Tweaks panel (visual-style toggles) — not the app itself.
+
+**File structure**
+- `veylix-sim.js` — seeded Monte Carlo engine.
+- `veylix-chart.js` — Canvas renderer.
+- `veylix-app.js` — UI wiring.
+- `veylix-tweaks.jsx` — Tweaks panel.
+- `Veylix.html` — loads it all; the standalone export inlines everything into one offline file.
+
+**Model summary** (detail lives with `veylix-sim.js`)
+- ~3,000 paths, fixed seed, zero-drift (models risk/dispersion, not returns).
+- Assets share a common BTC market factor plus idiosyncratic noise; a BTC hedge shorts the common factor (cutting variance) and carries a funding cost. Detailed factor betas and per-asset vols should be documented alongside the engine for verifiability.
