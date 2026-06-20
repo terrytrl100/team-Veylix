@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veylix — see the consequence first</title>
+  <style>
+    :root {
+      --bg: #090c12; --surface: #0f1520; --surface2: #161e2e;
+      --border: rgba(255,255,255,0.07); --text: #e9edf4; --muted: #6b7a99;
+      --amber: #f5a524; --coral: #ff6f6f; --teal: #4fd1c5;
+      --mono: ui-monospace,'SF Mono','Fira Code',monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; font-size: 14px; line-height: 1.5; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+    header { border-bottom: 1px solid var(--border); padding: 14px 0; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .wordmark { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+    .wordmark span { color: var(--amber); }
+    .header-right { display: flex; align-items: center; gap: 14px; }
+    .pill { font-size: 11px; color: var(--muted); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+    .pv-label { font-size: 11px; color: var(--muted); text-align: right; }
+    .pv-value { font: 700 17px var(--mono); font-variant-numeric: tabular-nums; }
+    main { padding: 24px 0; display: flex; flex-direction: column; gap: 16px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+    .card-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 14px; }
+
+    /* Cone */
+    .cone-layout { display: grid; grid-template-columns: 130px 1fr; gap: 20px; align-items: start; }
+    .cone-side { display: flex; flex-direction: column; gap: 14px; }
+    .cs-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .cs-val { font: 700 34px var(--mono); font-variant-numeric: tabular-nums; line-height: 1; }
+    .cs-val.coral { color: var(--coral); } .cs-val.teal { color: var(--teal); } .cs-val.amber { color: var(--amber); }
+    .cone-chart { flex: 1; }
+    #cone-svg { width: 100%; height: auto; display: block; }
+    .cone-caption { font-size: 11px; color: var(--muted); margin-top: 6px; text-align: center; }
+
+    /* Controls row */
+    .controls-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    /* Pie */
+    .pie-wrap { display: flex; align-items: center; gap: 16px; }
+    #pie-svg { width: 120px; height: 120px; flex-shrink: 0; }
+    .legend { display: flex; flex-direction: column; gap: 7px; flex: 1; }
+    .leg-row { display: grid; grid-template-columns: 8px 1fr auto; gap: 8px; align-items: center; }
+    .leg-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .leg-sym { font-weight: 600; font-size: 12px; }
+    .leg-pct { font-size: 11px; color: var(--muted); }
+    .leg-val { font: 12px var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+
+    /* Portfolio selector */
+    .port-sel { display: flex; gap: 6px; margin-bottom: 14px; }
+    .port-btn { flex: 1; padding: 5px 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--muted); font-size: 12px; cursor: pointer; text-align: center; }
+    .port-btn.active { background: var(--amber); color: #000; border-color: var(--amber); font-weight: 700; }
+
+    /* Hedge controls */
+    .ctrl-section { margin-bottom: 16px; }
+    .ctrl-section:last-child { margin-bottom: 0; }
+    .ctrl-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+    .toggle-group { display: flex; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 3px; gap: 2px; }
+    .tog-btn { flex: 1; padding: 6px 8px; background: none; border: none; border-radius: 6px; color: var(--muted); font-size: 12px; cursor: pointer; white-space: nowrap; }
+    .tog-btn.active { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.35); }
+    .instr-desc { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+    .slider-row { display: flex; align-items: center; gap: 12px; }
+    input[type=range] { -webkit-appearance: none; appearance: none; flex: 1; height: 4px; border-radius: 2px; background: var(--surface2); border: 1px solid var(--border); outline: none; cursor: pointer; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--amber); cursor: pointer; box-shadow: 0 0 0 3px rgba(245,165,36,.2); }
+    input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--amber); border: none; cursor: pointer; }
+    .slider-val { font: 700 14px var(--mono); font-variant-numeric: tabular-nums; color: var(--amber); min-width: 36px; text-align: right; }
+
+    /* Tiles */
+    .tiles { display: grid; grid-template-columns: repeat(7,1fr); gap: 10px; }
+    .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+    .tile-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; line-height: 1.3; }
+    .tile-val { font: 700 17px var(--mono); font-variant-numeric: tabular-nums; line-height: 1; }
+    .tile-val.coral { color: var(--coral); } .tile-val.teal { color: var(--teal); } .tile-val.amber { color: var(--amber); }
+
+    /* Why */
+    .why-text { font-size: 14px; line-height: 1.75; color: var(--text); }
+    .why-text em { color: var(--amber); font-style: normal; font-weight: 600; }
+
+    footer { border-top: 1px solid var(--border); padding: 14px 0; font-size: 11px; color: var(--muted); text-align: center; line-height: 1.6; }
+
+    @media (max-width: 820px) {
+      .cone-layout { grid-template-columns: 1fr; }
+      .cone-side { flex-direction: row; flex-wrap: wrap; }
+      .controls-row { grid-template-columns: 1fr; }
+      .tiles { grid-template-columns: repeat(4,1fr); }
+    }
+    @media (max-width: 480px) { .tiles { grid-template-columns: repeat(2,1fr); } }
+  </style>
+</head>
+<body>
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <div>
+        <div class="wordmark">Vey<span>lix</span></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:1px">see the consequence first</div>
+      </div>
+      <div class="header-right">
+        <div class="pill">Educational · not investment advice</div>
+        <div>
+          <div class="pv-label">Portfolio value</div>
+          <div class="pv-value" id="hdr-val">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    <!-- Cone -->
+    <div class="card">
+      <div class="cone-layout">
+        <div class="cone-side">
+          <div>
+            <div class="cs-label">1-in-20 worst case</div>
+            <div class="cs-val coral" id="hero-p5">—</div>
+          </div>
+          <div>
+            <div class="cs-label">Median outcome</div>
+            <div class="cs-val" id="hero-p50">—</div>
+          </div>
+        </div>
+        <div class="cone-chart">
+          <svg id="cone-svg" viewBox="0 0 800 270" xmlns="http://www.w3.org/2000/svg"><g id="cone-g"></g></svg>
+          <div class="cone-caption">Simulated 3,000 paths · single-factor zero-drift model · <span id="cone-cap"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-row">
+      <div class="card">
+        <div class="card-label">Portfolio</div>
+        <div class="port-sel">
+          <button class="port-btn active" data-p="client_alpha" onclick="selPortfolio(this)">Alpha<br><span style="font-size:10px;font-weight:400">$24,860</span></button>
+          <button class="port-btn" data-p="client_beta" onclick="selPortfolio(this)">Beta<br><span style="font-size:10px;font-weight:400">$12,000</span></button>
+          <button class="port-btn" data-p="client_gamma" onclick="selPortfolio(this)">Gamma<br><span style="font-size:10px;font-weight:400">$50,000</span></button>
+        </div>
+        <div class="pie-wrap">
+          <svg id="pie-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><g id="pie-g"></g></svg>
+          <div class="legend" id="legend"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ctrl-section">
+          <div class="ctrl-label">Hedge instrument</div>
+          <div class="toggle-group">
+            <button class="tog-btn active" id="btn-btc" onclick="selInstrument('BTC')">Short BTC</button>
+            <button class="tog-btn" id="btn-mstr" onclick="selInstrument('MSTR')">Short MSTR</button>
+          </div>
+          <div class="instr-desc" id="instr-desc">Short BTC perps neutralise your portfolio's BTC market factor directly.</div>
+        </div>
+        <div class="ctrl-section">
+          <div class="ctrl-label">Hedge amount</div>
+          <div class="slider-row">
+            <input type="range" id="hedge-slider" min="0" max="100" value="0" oninput="onHedge(this)">
+            <div class="slider-val" id="hedge-lbl">0%</div>
+          </div>
+        </div>
+        <div class="ctrl-section">
+          <div class="ctrl-label">Horizon</div>
+          <div class="toggle-group">
+            <button class="tog-btn" id="btn-7d" onclick="selHorizon(7)">7d</button>
+            <button class="tog-btn active" id="btn-30d" onclick="selHorizon(30)">30d</button>
+            <button class="tog-btn" id="btn-90d" onclick="selHorizon(90)">90d</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tiles -->
+    <div class="tiles">
+      <div class="tile"><div class="tile-label">Median outcome</div><div class="tile-val" id="t-med">—</div></div>
+      <div class="tile"><div class="tile-label">1-in-20 downside</div><div class="tile-val coral" id="t-p5">—</div></div>
+      <div class="tile"><div class="tile-label">Typical max drawdown</div><div class="tile-val coral" id="t-dd">—</div></div>
+      <div class="tile"><div class="tile-label">Chance loss &gt;25%</div><div class="tile-val coral" id="t-loss">—</div></div>
+      <div class="tile"><div class="tile-label">Effective BTC beta</div><div class="tile-val amber" id="t-beta">—</div></div>
+      <div class="tile"><div class="tile-label">BTC funding rate</div><div class="tile-val" id="t-fund">—</div></div>
+      <div class="tile"><div class="tile-label">Cost of insurance</div><div class="tile-val" id="t-carry">—</div></div>
+    </div>
+
+    <!-- Why -->
+    <div class="card">
+      <div class="card-label">Why these numbers</div>
+      <div class="why-text" id="why-text">—</div>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    Simulated from modelled volatility — not forecasts or predictions of future prices.<br>
+    Does not recommend any position, allocation, or hedge. Educational use only.
+  </div>
+</footer>
+
+<script>
+// ── Embedded data (schema v1) ──────────────────────────────────────────────
+const CALIB = {
+  btc_factor_vol_daily: 0.032, funding_annual: 0.10, mstr_borrow_annual: 0.05,
+  symbols: {
+    BTC:  { beta: 1.0,  idio_vol_daily: 0.0   },
+    ETH:  { beta: 1.15, idio_vol_daily: 0.021 },
+    SOL:  { beta: 1.6,  idio_vol_daily: 0.038 },
+    LINK: { beta: 1.4,  idio_vol_daily: 0.041 },
+    DOGE: { beta: 1.9,  idio_vol_daily: 0.070 },
+    USDT: { beta: 0.0,  idio_vol_daily: 0.0   },
+  },
+  hedge_instruments: { MSTR: { beta: 1.8, idio_vol_daily: 0.045 } },
+  model_version: 'v1',
+};
+
+const BOOKS = {
+  client_alpha: { result: { list: [{ totalEquity: '24860.00', coin: [
+    { coin: 'BTC',  usdValue: '9000.00' }, { coin: 'ETH',  usdValue: '6500.00' },
+    { coin: 'SOL',  usdValue: '5360.00' }, { coin: 'USDT', usdValue: '4000.00' },
+  ]}]}},
+  client_beta: { result: { list: [{ totalEquity: '12000.00', coin: [
+    { coin: 'SOL',  usdValue: '4000.00' }, { coin: 'DOGE', usdValue: '3500.00' },
+    { coin: 'ETH',  usdValue: '2500.00' }, { coin: 'BTC',  usdValue: '1500.00' },
+    { coin: 'USDT', usdValue: '500.00'  },
+  ]}]}},
+  client_gamma: { result: { list: [{ totalEquity: '50000.00', coin: [
+    { coin: 'BTC',  usdValue: '20000.00' }, { coin: 'ETH', usdValue: '8000.00' },
+    { coin: 'USDT', usdValue: '22000.00' },
+  ]}]}},
+};
+
+// ── PRNG: mulberry32 ──────────────────────────────────────────────────────
+function mulberry32(seed) {
+  return () => {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// ── Simulation engine (veylix-sim) ────────────────────────────────────────
+function runSim(calib, portfolio, hedge, instrument, H) {
+  const N = 3000, SEED = 0x5EED5;
+  const book = portfolio.result.list[0];
+  const equity = parseFloat(book.totalEquity);
+  const coins = book.coin.map(c => ({
+    sym: c.coin,
+    w:   parseFloat(c.usdValue) / equity,
+    b:   (calib.symbols[c.coin] || {}).beta          ?? 0,
+    iv:  (calib.symbols[c.coin] || {}).idio_vol_daily ?? 0,
+  }));
+
+  const gl     = coins.reduce((s, c) => s + c.w * c.b, 0); // gross_loading
+  const bv     = calib.btc_factor_vol_daily;
+  const h      = hedge;
+  const bM     = calib.hedge_instruments.MSTR.beta;
+  const ivM    = calib.hedge_instruments.MSTR.idio_vol_daily;
+  const carryD = instrument === 'BTC'
+    ? calib.funding_annual * h / 365
+    : calib.mstr_borrow_annual * (h / bM) / 365;
+
+  const rand = mulberry32(SEED);
+  let spare = null;
+  const gauss = () => {
+    if (spare !== null) { const v = spare; spare = null; return v; }
+    const u1 = Math.max(rand(), 1e-300), u2 = rand();
+    const r = Math.sqrt(-2 * Math.log(u1));
+    spare = r * Math.sin(2 * Math.PI * u2);
+    return r * Math.cos(2 * Math.PI * u2);
+  };
+
+  // flat array: pathVals[p*(H+1)+t] = portfolio value at day t for path p
+  const pv  = new Float64Array(N * (H + 1));
+  const pdd = new Float64Array(N);
+
+  for (let p = 0; p < N; p++) {
+    let val = equity, peak = equity, maxDD = 0;
+    pv[p * (H + 1)] = val;
+    for (let t = 0; t < H; t++) {
+      const F = gauss() * bv;
+      let r = (gl - h) * F;
+      for (const c of coins) if (c.iv > 0) r += c.w * gauss() * c.iv;
+      if (instrument === 'MSTR' && h > 0) r -= (h / bM) * gauss() * ivM;
+      r = Math.max(r - carryD, -0.99);
+      val *= (1 + r);
+      if (val > peak) peak = val;
+      else { const dd = (peak - val) / peak; if (dd > maxDD) maxDD = dd; }
+      pv[p * (H + 1) + t + 1] = val;
+    }
+    pdd[p] = maxDD;
+  }
+
+  // cone percentiles at each day
+  const cone = [];
+  const col  = new Float64Array(N);
+  for (let t = 0; t <= H; t++) {
+    for (let p = 0; p < N; p++) col[p] = (pv[p * (H + 1) + t] / equity - 1) * 100;
+    col.sort();
+    cone.push({
+      p5:  col[Math.floor(N * 0.05)],
+      p25: col[Math.floor(N * 0.25)],
+      p50: col[Math.floor(N * 0.50)],
+      p75: col[Math.floor(N * 0.75)],
+      p95: col[Math.floor(N * 0.95)],
+    });
+  }
+
+  // final stats
+  const fin = new Float64Array(N);
+  for (let p = 0; p < N; p++) fin[p] = pv[p * (H + 1) + H];
+  fin.sort(); pdd.sort();
+
+  const fP5  = (fin[Math.floor(N * 0.05)] / equity - 1) * 100;
+  const fP50 = (fin[Math.floor(N * 0.50)] / equity - 1) * 100;
+  const mDD  = pdd[Math.floor(N * 0.50)] * 100;
+  let lossN = 0;
+  for (let p = 0; p < N; p++) if (fin[p] < equity * 0.75) lossN++;
+
+  return {
+    cone, fP5, fP50, mDD,
+    chanceLoss: lossN / N * 100,
+    gl, coins, equity, h, instrument,
+    effectiveBeta: gl - h,
+    carryD, carryPct: carryD * H, carryDollar: carryD * H * equity,
+  };
+}
+
+// ── Chart rendering ───────────────────────────────────────────────────────
+const COIN_COLORS = { BTC:'#f5a524', ETH:'#4fd1c5', SOL:'#a78bfa', DOGE:'#fb923c', LINK:'#60a5fa', USDT:'#4b5563' };
+
+function renderCone(cone, H) {
+  const W=800, SH=270, ML=50, MR=16, MT=14, MB=32;
+  const CW=W-ML-MR, CH=SH-MT-MB;
+
+  let mn = Infinity, mx = -Infinity;
+  for (const p of cone) { if(p.p5<mn)mn=p.p5; if(p.p95>mx)mx=p.p95; }
+  const pad = ((mx-mn)*0.1)||5;
+  mn -= pad; mx += pad;
+  const rng = mx - mn;
+
+  const cx = t  => ML + (t/H)*CW;
+  const cy = v  => MT + CH - ((v-mn)/rng)*CH;
+
+  const band = (lo, hi) => {
+    const pts = [];
+    for (let t=0;t<=H;t++) pts.push(`${cx(t).toFixed(1)},${cy(cone[t][hi]).toFixed(1)}`);
+    for (let t=H;t>=0;t--) pts.push(`${cx(t).toFixed(1)},${cy(cone[t][lo]).toFixed(1)}`);
+    return `M ${pts[0]} L ${pts.slice(1).join(' L ')} Z`;
+  };
+
+  const line = key =>
+    cone.map((p,t) => `${t===0?'M':'L'} ${cx(t).toFixed(1)},${cy(p[key]).toFixed(1)}`).join(' ');
+
+  // Y ticks
+  let yticks = '';
+  const step = rng / 5;
+  for (let i=0;i<=5;i++) {
+    const v = mn + i*step, y = cy(v).toFixed(1);
+    yticks += `<line x1="${ML-4}" x2="${ML+CW}" y1="${y}" y2="${y}" stroke="#1e2d45" stroke-width="0.5"/>`;
+    yticks += `<text x="${ML-6}" y="${(+y+4).toFixed(1)}" text-anchor="end" fill="#6b7a99" font-size="10" font-family="ui-monospace,monospace">${v>=0?'+':''}${v.toFixed(0)}%</text>`;
+  }
+
+  // X ticks
+  const xts = H<=7 ? Array.from({length:H+1},(_,i)=>i) : H<=30 ? [0,7,14,21,H] : [0,30,60,90];
+  let xticks = '';
+  for (const t of xts) {
+    const x = cx(t).toFixed(1);
+    xticks += `<line x1="${x}" x2="${x}" y1="${MT}" y2="${MT+CH+4}" stroke="#1e2d45" stroke-width="0.5"/>`;
+    xticks += `<text x="${x}" y="${MT+CH+16}" text-anchor="middle" fill="#6b7a99" font-size="10" font-family="ui-monospace,monospace">${t===0?'now':t+'d'}</text>`;
+  }
+
+  const zeroY = cy(0).toFixed(1);
+
+  document.getElementById('cone-g').innerHTML =
+    `${yticks}${xticks}` +
+    `<line x1="${ML}" x2="${ML+CW}" y1="${zeroY}" y2="${zeroY}" stroke="#fff" stroke-width="0.5" stroke-dasharray="4,4" opacity="0.15"/>` +
+    `<path d="${band('p5','p25')}"  fill="#ff6f6f" opacity="0.20"/>` +
+    `<path d="${band('p25','p75')}" fill="#94a3b8" opacity="0.08"/>` +
+    `<path d="${band('p75','p95')}" fill="#4fd1c5" opacity="0.15"/>` +
+    `<path d="${line('p50')}" fill="none" stroke="#f5a524" stroke-width="2" stroke-linecap="round"/>` +
+    `<path d="${line('p5')}"  fill="none" stroke="#ff6f6f" stroke-width="1.5" stroke-linecap="round"/>` +
+    `<circle cx="${cx(H).toFixed(1)}" cy="${cy(cone[H].p5).toFixed(1)}" r="4" fill="#ff6f6f"/>`;
+}
+
+function renderPie(coins, equity) {
+  const r=54, ir=34, cx=60, cy=60;
+  let a = -Math.PI/2, slices='', legend='';
+  for (const c of coins) {
+    const sweep = c.w * 2 * Math.PI, end = a+sweep;
+    const lg = sweep>Math.PI?1:0;
+    const col = COIN_COLORS[c.sym]||'#888';
+    const x1=cx+r*Math.cos(a), y1=cy+r*Math.sin(a);
+    const x2=cx+r*Math.cos(end), y2=cy+r*Math.sin(end);
+    const ix1=cx+ir*Math.cos(a), iy1=cy+ir*Math.sin(a);
+    const ix2=cx+ir*Math.cos(end), iy2=cy+ir*Math.sin(end);
+    slices += `<path d="M${x1.toFixed(1)},${y1.toFixed(1)} A${r},${r} 0 ${lg},1 ${x2.toFixed(1)},${y2.toFixed(1)} L${ix2.toFixed(1)},${iy2.toFixed(1)} A${ir},${ir} 0 ${lg},0 ${ix1.toFixed(1)},${iy1.toFixed(1)}Z" fill="${col}"/>`;
+    legend += `<div class="leg-row">
+      <div class="leg-dot" style="background:${col}"></div>
+      <div><span class="leg-sym">${c.sym}</span> <span class="leg-pct">${(c.w*100).toFixed(1)}%</span></div>
+      <div class="leg-val">$${Math.round(c.w*equity).toLocaleString()}</div>
+    </div>`;
+    a = end;
+  }
+  slices += `<text x="${cx}" y="${cy+4}" text-anchor="middle" fill="#e9edf4" font-size="9" font-weight="700" font-family="ui-monospace,monospace">$${Math.round(equity).toLocaleString()}</text>`;
+  document.getElementById('pie-g').innerHTML = slices;
+  document.getElementById('legend').innerHTML = legend;
+}
+
+// ── Why text ──────────────────────────────────────────────────────────────
+function buildWhy(res, base) {
+  const { coins, gl, h, instrument, fP5, fP50, effectiveBeta, carryPct, carryDollar } = res;
+  const bv = CALIB.btc_factor_vol_daily;
+  const fv = Math.pow(gl-h,2) * Math.pow(bv,2);
+  const iv = coins.reduce((s,c) => s + c.w*c.w*c.iv*c.iv, 0);
+  const btcSh = fv/(fv+iv);
+  const top = coins.reduce((best,c) => {
+    const v = c.w*c.w*(c.b*c.b*bv*bv+c.iv*c.iv);
+    return v>best.v?{c,v}:best;
+  }, {c:coins[0], v:-1}).c;
+
+  const pf = n => (n>=0?'+':'')+n.toFixed(1)+'%';
+  const H  = STATE.horizon;
+
+  if (h === 0) {
+    return `You hold ${coins.length} assets, but <em>~${Math.round(btcSh*100)}% of your risk is a single bet on BTC</em> ` +
+      `(driven by ${top.sym}). Over ${H} days, the 1-in-20 worst case lands at <em>${pf(fP5)}</em> with a median of <em>${pf(fP50)}</em>. ` +
+      `Drag the hedge slider to see how adding a ${instrument==='MSTR'?'Short MSTR':'Short BTC'} hedge lifts the downside floor.`;
+  }
+
+  const basePf = base ? pf(base.fP5) : '—';
+  let txt = `The <em>${Math.round(h*100)}% hedge lifts your 1-in-20 floor from ${basePf} to ${pf(fP5)}</em>, ` +
+    `while the median barely moves (<em>${pf(fP50)}</em>). ` +
+    `Effective BTC beta drops to <em>${effectiveBeta.toFixed(2)}x</em> (from ${gl.toFixed(2)}x unhedged). ` +
+    `Carry cost over ${H}d: <em>~${(carryPct*100).toFixed(2)}% · ~$${Math.round(carryDollar).toLocaleString()}</em>.`;
+  if (instrument==='MSTR')
+    txt += ` Note: Short MSTR adds basis risk — MSTR tracks BTC loosely, so the floor lifts <em>less</em> than a direct BTC short at the same ratio.`;
+  return txt;
+}
+
+// ── State & update ────────────────────────────────────────────────────────
+const STATE = { portfolio: 'client_alpha', hedge: 0, instrument: 'BTC', horizon: 30 };
+let raf = null, baseCache = {};
+
+function update() {
+  const port = BOOKS[STATE.portfolio];
+  const res  = runSim(CALIB, port, STATE.hedge, STATE.instrument, STATE.horizon);
+
+  // baseline (h=0) for floor-lift — cached per portfolio+horizon
+  const bk = `${STATE.portfolio}_${STATE.horizon}`;
+  if (!baseCache[bk]) baseCache[bk] = runSim(CALIB, port, 0, 'BTC', STATE.horizon);
+  const base = baseCache[bk];
+
+  const eq = res.equity;
+  document.getElementById('hdr-val').textContent = '$'+Math.round(eq).toLocaleString();
+
+  const pf = n => (n>=0?'+':'')+n.toFixed(1)+'%';
+
+  document.getElementById('hero-p5').textContent  = pf(res.fP5);
+  document.getElementById('hero-p50').textContent = pf(res.fP50);
+  document.getElementById('hero-p50').className   = 'cs-val '+(res.fP50>=0?'teal':'coral');
+
+  document.getElementById('cone-cap').textContent = `${STATE.horizon}d horizon · model v${CALIB.model_version}`;
+  renderCone(res.cone, STATE.horizon);
+
+  const book = port.result.list[0];
+  const coins = book.coin.map(c => ({ sym: c.coin, w: parseFloat(c.usdValue)/eq }));
+  renderPie(coins, eq);
+
+  // tiles
+  const setTile = (id, txt, cls) => {
+    const el = document.getElementById(id);
+    el.textContent = txt;
+    el.className = 'tile-val'+(cls?' '+cls:'');
+  };
+  setTile('t-med',  pf(res.fP50), res.fP50>=0?'teal':'coral');
+  setTile('t-p5',   pf(res.fP5),  'coral');
+  setTile('t-dd',   '-'+res.mDD.toFixed(1)+'%', 'coral');
+  setTile('t-loss', res.chanceLoss.toFixed(1)+'%', 'coral');
+  setTile('t-beta', res.effectiveBeta.toFixed(2)+'x', 'amber');
+  setTile('t-fund', (CALIB.funding_annual*100).toFixed(0)+'% · snapshot', '');
+  if (Math.abs(res.carryDollar)<0.5) setTile('t-carry','$0','');
+  else setTile('t-carry','-$'+Math.round(res.carryDollar).toLocaleString(),'coral');
+
+  document.getElementById('why-text').innerHTML = buildWhy(res, STATE.hedge>0?base:null);
+
+  document.getElementById('instr-desc').textContent = STATE.instrument==='BTC'
+    ? 'Short BTC perps neutralise your portfolio\'s BTC market factor directly.'
+    : 'Short MSTR in any stock brokerage — accessible to investors who can\'t short crypto. Tracks the same BTC factor but adds basis risk, so the floor lifts less than a direct short.';
+}
+
+function go() { if(raf) cancelAnimationFrame(raf); raf=requestAnimationFrame(()=>{raf=null;update();}); }
+
+function selPortfolio(btn) {
+  document.querySelectorAll('.port-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  STATE.portfolio = btn.dataset.p;
+  go();
+}
+function selInstrument(i) {
+  STATE.instrument = i;
+  document.getElementById('btn-btc').classList.toggle('active',  i==='BTC');
+  document.getElementById('btn-mstr').classList.toggle('active', i==='MSTR');
+  go();
+}
+function onHedge(el) {
+  STATE.hedge = parseInt(el.value)/100;
+  document.getElementById('hedge-lbl').textContent = el.value+'%';
+  go();
+}
+function selHorizon(d) {
+  STATE.horizon = d;
+  ['7d','30d','90d'].forEach(k => document.getElementById('btn-'+k).classList.toggle('active', k===d+'d'));
+  go();
+}
+
+// init
+update();
+</script>
+</body>
+</html>
