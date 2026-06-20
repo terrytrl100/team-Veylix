@@ -30,6 +30,7 @@ export function Providers({ children }: { children: ReactNode }) {
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider theme={veylixTheme} modalSize="compact">
+          {/* @ts-expect-error — RainbowKit bundles its own @types/react; safe at runtime */}
           {children}
         </RainbowKitProvider>
       </QueryClientProvider>
