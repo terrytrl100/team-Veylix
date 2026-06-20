@@ -14,7 +14,8 @@ import {
 } from "@/lib/engine-data";
 import type { PortfolioName } from "@/lib/engine-data";
 import type { Portfolio, Calibration, PortfolioMetrics } from "@/lib/types";
-import { fetchLivePrices, fetchLiveCalibration } from "@/lib/coingecko";
+import { fetchLivePrices, fetchLiveCalibration, bustPriceCache } from "@/lib/coingecko";
+import { RefreshCw } from "lucide-react";
 import { useWalletPortfolio } from "@/hooks/useWalletPortfolio";
 import { simulate } from "@/lib/veylix-sim";
 import type { SimResult, Instrument } from "@/lib/veylix-sim";
@@ -340,7 +341,13 @@ export default function AnalysisPage() {
   const [sliderPct,  setSliderPct]  = useState(0);
   const [instrument, setInstrument] = useState<Instrument>("BTC");
   const [horizon,    setHorizon]    = useState<Horizon>(30);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [, startTransition] = useTransition();
+
+  const handleRefresh = useCallback(() => {
+    bustPriceCache();
+    setRefreshKey((k) => k + 1);
+  }, []);
 
   useEffect(() => {
     if (!isConnected) router.replace("/app");
@@ -389,7 +396,7 @@ export default function AnalysisPage() {
         setLoading(false);
       }
     })();
-  }, [isConnected, walletLoading, hasBalances, walletPortfolio, demoSelected]);
+  }, [isConnected, walletLoading, hasBalances, walletPortfolio, demoSelected, refreshKey]);
 
   const simResult = useMemo<SimResult | null>(() => {
     if (!livePortfolio || !liveCalibration) return null;
@@ -454,6 +461,17 @@ export default function AnalysisPage() {
                 <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted">Snapshot</span>
               )}
               {walletLoading && <span className="text-[11px] text-muted">Reading wallet…</span>}
+              {!walletLoading && (
+                <button
+                  onClick={handleRefresh}
+                  disabled={loading}
+                  title="Refresh live prices from Bybit"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-0.5 text-[11px] text-muted hover:border-muted hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+                  {loading ? "Refreshing…" : "Refresh"}
+                </button>
+              )}
               {!walletLoading && !hasBalances && (
                 <span className="text-[11px] text-muted">No supported tokens on Arbitrum — showing demo</span>
               )}
