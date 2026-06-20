@@ -86,6 +86,14 @@
 
     footer { border-top: 1px solid var(--border); padding: 14px 0; font-size: 11px; color: var(--muted); text-align: center; line-height: 1.6; }
 
+    /* Live data badge */
+    .live-badge { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); transition: background .4s; flex-shrink: 0; }
+    .live-dot.live { background: var(--teal); animation: livepulse 2.5s ease-in-out infinite; }
+    @keyframes livepulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .refresh-btn { background: none; border: 1px solid var(--border); border-radius: 5px; color: var(--muted); font-size: 12px; padding: 3px 9px; cursor: pointer; transition: color .15s, border-color .15s; line-height: 1; }
+    .refresh-btn:hover { color: var(--text); border-color: var(--amber); }
+
     @media (max-width: 820px) {
       .cone-layout { grid-template-columns: 1fr; }
       .cone-side { flex-direction: row; flex-wrap: wrap; }
@@ -105,6 +113,11 @@
       </div>
       <div class="header-right">
         <div class="pill">Educational · not investment advice</div>
+        <div class="live-badge">
+          <div class="live-dot" id="live-dot"></div>
+          <span id="live-text">snapshot</span>
+        </div>
+        <button class="refresh-btn" onclick="fetchLiveData()" aria-label="Refresh live data">↻</button>
         <div>
           <div class="pv-label">Portfolio value</div>
           <div class="pv-value" id="hdr-val">—</div>
@@ -880,8 +893,56 @@ function selHorizon(d) {
   go();
 }
 
-// init
+// ── Live data from Bybit public API ──────────────────────────────────────
+async function fetchLiveData() {
+  const BYBIT = 'https://api.bybit.com';
+  const dot  = document.getElementById('live-dot');
+  const txt  = document.getElementById('live-text');
+  try {
+    // parallel: all spot tickers + latest BTC perp funding rate
+    const [tickRes, fundRes] = await Promise.all([
+      fetch(`${BYBIT}/v5/market/tickers?category=spot`),
+      fetch(`${BYBIT}/v5/market/funding/history?category=linear&symbol=BTCUSDT&limit=1`)
+    ]);
+    if (!tickRes.ok || !fundRes.ok) throw new Error('http');
+    const [ticks, fund] = await Promise.all([tickRes.json(), fundRes.json()]);
+
+    // build coin→price map from spot tickers (USDT pairs only)
+    const px = { USDT: 1 };
+    for (const t of ticks.result.list) {
+      if (t.symbol.endsWith('USDT')) px[t.symbol.slice(0, -4)] = +t.lastPrice;
+    }
+
+    // Bybit funding is the 8-hour rate → annualise: × 3 payments/day × 365
+    const r8h = +fund.result.list[0].fundingRate;
+    CALIB.funding_annual = r8h * 3 * 365;
+
+    // reprice each portfolio: walletBalance (coin units) × live spot price
+    for (const key of Object.keys(BOOKS)) {
+      const acct = BOOKS[key].result.list[0];
+      let tot = 0;
+      for (const c of acct.coin) {
+        if (px[c.coin] != null) c.usdValue = (+c.walletBalance * px[c.coin]).toFixed(2);
+        tot += +c.usdValue;
+      }
+      acct.totalEquity = tot.toFixed(2);
+    }
+
+    dot.className = 'live-dot live';
+    txt.textContent = `Bybit · live · ${new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+    baseCache = {};  // invalidate cached baselines — prices changed
+    update();
+
+  } catch (_) {
+    dot.className = 'live-dot';
+    txt.textContent = 'Bybit · snapshot';
+  }
+}
+
+// init: show snapshot immediately, then layer in live data
 update();
+fetchLiveData();
+setInterval(fetchLiveData, 120_000);  // auto-refresh every 2 min
 </script>
 </body>
 </html>

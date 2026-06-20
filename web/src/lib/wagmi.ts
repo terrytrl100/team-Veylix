@@ -1,5 +1,5 @@
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
-import { mainnet, base, arbitrum, optimism, polygon, sepolia } from "wagmi/chains";
+import { arbitrum } from "wagmi/chains";
 
 /**
  * WalletConnect Cloud project id.
@@ -13,20 +13,11 @@ import { mainnet, base, arbitrum, optimism, polygon, sepolia } from "wagmi/chain
  */
 const projectId = process.env.NEXT_PUBLIC_WC_PROJECT_ID ?? "veylix_dev_placeholder";
 
-const enableTestnets = process.env.NEXT_PUBLIC_ENABLE_TESTNETS === "true";
-
 export const wagmiConfig = getDefaultConfig({
   appName: "Veylix",
   appDescription: "Pre-trade risk visibility for retail crypto.",
   projectId,
-  chains: [
-    mainnet,
-    base,
-    arbitrum,
-    optimism,
-    polygon,
-    ...(enableTestnets ? [sepolia] : []),
-  ],
+  chains: [arbitrum],
   // Veylix uses Next.js App Router with server rendering.
   ssr: true,
 });

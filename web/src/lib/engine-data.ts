@@ -20,6 +20,25 @@ export async function fetchPortfolio(name: PortfolioName): Promise<Portfolio> {
   return res.json();
 }
 
+export function applyLivePrices(
+  portfolio: Portfolio,
+  prices: Record<string, number>
+): Portfolio {
+  const account = portfolio.result.list[0];
+  const updatedCoins = account.coin.map((c) => {
+    const price = prices[c.coin];
+    if (!price) return c;
+    const usdValue = (parseFloat(c.walletBalance) * price).toFixed(2);
+    return { ...c, usdValue };
+  });
+  const totalEquity = updatedCoins
+    .reduce((s, c) => s + parseFloat(c.usdValue), 0)
+    .toFixed(2);
+  return {
+    result: { list: [{ ...account, totalEquity, coin: updatedCoins }] },
+  };
+}
+
 export function computeMetrics(
   portfolio: Portfolio,
   calibration: Calibration
@@ -32,6 +51,7 @@ export function computeMetrics(
     return {
       symbol: c.coin,
       usdValue: parseFloat(c.usdValue),
+      walletBalance: parseFloat(c.walletBalance),
       weight: parseFloat(c.usdValue) / totalEquity,
       beta: params.beta,
       idio_vol_daily: params.idio_vol_daily,

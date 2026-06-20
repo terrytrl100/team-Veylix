@@ -29,8 +29,9 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         <RainbowKitProvider theme={veylixTheme} modalSize="compact">
-          {children}
+          {children as any}
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>

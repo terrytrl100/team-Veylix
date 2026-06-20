@@ -32,6 +32,7 @@ export interface Portfolio {
 export interface CoinRow {
   symbol: string;
   usdValue: number;
+  walletBalance: number;
   weight: number;
   beta: number;
   idio_vol_daily: number;
