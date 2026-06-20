@@ -17,11 +17,11 @@ export default function AppHome() {
   const { address, isConnected, chain, status } = useAccount();
 
   // If the user lands here without a connected wallet, send them back.
-  useEffect(() => {
-    if (status !== "connecting" && status !== "reconnecting" && !isConnected) {
-      router.replace("/");
-    }
-  }, [isConnected, status, router]);
+  // useEffect(() => {
+  //   if (status !== "connecting" && status !== "reconnecting" && !isConnected) {
+  //     router.replace("/");
+  //   }
+  // }, [isConnected, status, router]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -68,7 +68,18 @@ export default function AppHome() {
               </dl>
             </div>
           ) : (
-            <p className="text-muted">Redirecting&hellip;</p>
+            <div className="max-w-xl">
+              <h1 className="text-3xl font-semibold tracking-tight">
+                Connect your wallet to continue
+              </h1>
+              <p className="mt-4 text-muted">
+                Veylix needs read-only access to your on-chain holdings to model
+                your real risk exposure.
+              </p>
+              <div className="mt-8">
+                <ConnectButton />
+              </div>
+            </div>
           )}
         </section>
       </main>
