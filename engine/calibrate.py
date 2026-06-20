@@ -73,7 +73,12 @@ def bybit_daily_closes(symbol: str, days: int = LOOKBACK_DAYS) -> dict[dt.date, 
 
 
 def bybit_funding_annual(symbol: str = "BTCUSDT", limit: int = 200) -> float:
-    """Annualised BTC funding = mean(8h funding rate) * 3 * 365."""
+    """Annualised BTC funding = MEDIAN(8h funding rate) * 3 * 365.
+
+    Median, not mean: BTC funding swings between small positive and negative prints,
+    and the mean gets dragged toward zero by the negative ones. The median reflects
+    the typical recent regime.
+    """
     r = session.get(
         f"{BYBIT}/v5/market/funding/history",
         params={"category": "linear", "symbol": symbol, "limit": limit},
@@ -86,7 +91,7 @@ def bybit_funding_annual(symbol: str = "BTCUSDT", limit: int = 200) -> float:
     rates = [float(x["fundingRate"]) for x in payload["result"]["list"]]
     if not rates:
         raise RuntimeError("no funding history returned")
-    return float(np.mean(rates) * 3 * 365)
+    return float(np.median(rates) * 3 * 365)
 
 
 # --------------------------------------------------------------------------- #

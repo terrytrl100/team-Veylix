@@ -180,7 +180,7 @@
       <div class="tile"><div class="tile-label">Typical max drawdown</div><div class="tile-val coral" id="t-dd">—</div></div>
       <div class="tile"><div class="tile-label">Chance loss &gt;25%</div><div class="tile-val coral" id="t-loss">—</div></div>
       <div class="tile"><div class="tile-label">Effective BTC beta</div><div class="tile-val amber" id="t-beta">—</div></div>
-      <div class="tile"><div class="tile-label">BTC funding rate</div><div class="tile-val" id="t-fund">—</div></div>
+      <div class="tile"><div class="tile-label" id="t-fund-label">BTC funding (ann.)</div><div class="tile-val" id="t-fund">—</div></div>
       <div class="tile"><div class="tile-label">Cost of insurance</div><div class="tile-val" id="t-carry">—</div></div>
     </div>
 
@@ -204,11 +204,11 @@
 // ── Embedded data (schema v1) ──────────────────────────────────────────────
 /* BUILD:CALIB:START — generated from data/calibration.json by engine/build.py; do not edit by hand */
 const CALIB = {
-  "as_of": "2026-06-20T15:06:10Z",
+  "as_of": "2026-06-20T15:34:44Z",
   "source": "bybit /v5/market/kline + /v5/market/funding/history (crypto); yfinance/Stooq (MSTR)",
   "lookback_days": 365,
   "btc_factor_vol_daily": 0.0224,
-  "funding_annual": 0.0077,
+  "funding_annual": 0.0107,
   "mstr_borrow_annual": 0.05,
   "symbols": {
     "BTC": {
@@ -216,35 +216,35 @@ const CALIB = {
       "idio_vol_daily": 0.0
     },
     "ETH": {
-      "beta": 1.353,
+      "beta": 1.3531,
       "idio_vol_daily": 0.0181
     },
     "SOL": {
-      "beta": 1.4076,
+      "beta": 1.408,
       "idio_vol_daily": 0.0209
     },
     "LINK": {
-      "beta": 1.4306,
+      "beta": 1.4304,
       "idio_vol_daily": 0.0252
     },
     "DOGE": {
-      "beta": 1.377,
+      "beta": 1.3767,
       "idio_vol_daily": 0.0276
     },
     "PEPE": {
-      "beta": 1.6203,
+      "beta": 1.6201,
       "idio_vol_daily": 0.038
     },
     "FLOKI": {
-      "beta": 1.5935,
+      "beta": 1.5932,
       "idio_vol_daily": 0.039
     },
     "BONK": {
-      "beta": 1.6662,
+      "beta": 1.6661,
       "idio_vol_daily": 0.0442
     },
     "WIF": {
-      "beta": 1.7643,
+      "beta": 1.764,
       "idio_vol_daily": 0.0428
     },
     "USDT": {
@@ -819,7 +819,10 @@ function update() {
   setTile('t-dd',   '-'+res.mDD.toFixed(1)+'%', 'coral');
   setTile('t-loss', res.chanceLoss.toFixed(1)+'%', 'coral');
   setTile('t-beta', res.effectiveBeta.toFixed(2)+'x', 'amber');
-  setTile('t-fund', (CALIB.funding_annual*100).toFixed(0)+'% · snapshot', '');
+  const isBtcHedge = STATE.instrument === 'BTC';
+  document.getElementById('t-fund-label').textContent = isBtcHedge ? 'BTC funding (ann.)' : 'MSTR borrow (ann.)';
+  const fundRate = isBtcHedge ? CALIB.funding_annual : CALIB.mstr_borrow_annual;
+  setTile('t-fund', (fundRate*100).toFixed(1)+'%/yr', '');
   if (Math.abs(res.carryDollar)<0.5) setTile('t-carry','$0','');
   else setTile('t-carry','-$'+Math.round(res.carryDollar).toLocaleString(),'coral');
 
