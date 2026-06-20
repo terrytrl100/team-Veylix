@@ -1,20 +1,57 @@
 {
-  "as_of": "2026-06-20T00:00:00Z",
-  "source": "DEMO placeholders — to be replaced by bybit /v5/market/kline (crypto) + yfinance (MSTR)",
+  "as_of": "2026-06-20T15:06:10Z",
+  "source": "bybit /v5/market/kline + /v5/market/funding/history (crypto); yfinance/Stooq (MSTR)",
   "lookback_days": 365,
-  "btc_factor_vol_daily": 0.032,
-  "funding_annual": 0.10,
+  "btc_factor_vol_daily": 0.0224,
+  "funding_annual": 0.0077,
   "mstr_borrow_annual": 0.05,
   "symbols": {
-    "BTC":  { "beta": 1.0,  "idio_vol_daily": 0.0   },
-    "ETH":  { "beta": 1.15, "idio_vol_daily": 0.021 },
-    "SOL":  { "beta": 1.6,  "idio_vol_daily": 0.038 },
-    "LINK": { "beta": 1.4,  "idio_vol_daily": 0.041 },
-    "DOGE": { "beta": 1.9,  "idio_vol_daily": 0.070 },
-    "USDT": { "beta": 0.0,  "idio_vol_daily": 0.0   }
+    "BTC": {
+      "beta": 1.0,
+      "idio_vol_daily": 0.0
+    },
+    "ETH": {
+      "beta": 1.353,
+      "idio_vol_daily": 0.0181
+    },
+    "SOL": {
+      "beta": 1.4076,
+      "idio_vol_daily": 0.0209
+    },
+    "LINK": {
+      "beta": 1.4306,
+      "idio_vol_daily": 0.0252
+    },
+    "DOGE": {
+      "beta": 1.377,
+      "idio_vol_daily": 0.0276
+    },
+    "PEPE": {
+      "beta": 1.6203,
+      "idio_vol_daily": 0.038
+    },
+    "FLOKI": {
+      "beta": 1.5935,
+      "idio_vol_daily": 0.039
+    },
+    "BONK": {
+      "beta": 1.6662,
+      "idio_vol_daily": 0.0442
+    },
+    "WIF": {
+      "beta": 1.7643,
+      "idio_vol_daily": 0.0428
+    },
+    "USDT": {
+      "beta": 0.0,
+      "idio_vol_daily": 0.0
+    }
   },
   "hedge_instruments": {
-    "MSTR": { "beta": 1.8, "idio_vol_daily": 0.045 }
+    "MSTR": {
+      "beta": 1.3683,
+      "idio_vol_daily": 0.0296
+    }
   },
   "model_version": "v1"
 }
