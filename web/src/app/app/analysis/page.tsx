@@ -21,6 +21,69 @@ import type { SimResult, Instrument } from "@/lib/veylix-sim";
 
 type DataSource = "wallet" | "demo-live" | "demo-static" | null;
 type Horizon = 7 | 30 | 90;
+type Tab = "portfolio" | "risk";
+
+// ─── Donut pie chart (SVG) ────────────────────────────────────────────────────
+
+const PIE_COLORS = [
+  "#f7931a","#627eea","#9945ff","#4fd1c5","#f5a524",
+  "#ff6f6f","#e879f9","#34d399","#60a5fa","#8b97ad",
+];
+
+function PieChart({ coins, totalEquity }: {
+  coins: Array<{ symbol: string; weight: number; usdValue: number }>;
+  totalEquity: number;
+}) {
+  const R = 76, IR = 44, CX = 96, CY = 96;
+  const visible = coins.filter((c) => c.weight > 0.001);
+
+  let a = -Math.PI / 2;
+  const slices = visible.map((c, i) => {
+    const s = a;
+    a += c.weight * 2 * Math.PI;
+    return { ...c, s, e: a, color: PIE_COLORS[i % PIE_COLORS.length] };
+  });
+
+  const arcPath = (s: number, e: number) => {
+    const cos = Math.cos, sin = Math.sin;
+    const x1 = (CX + R  * cos(s)).toFixed(2), y1 = (CY + R  * sin(s)).toFixed(2);
+    const x2 = (CX + R  * cos(e)).toFixed(2), y2 = (CY + R  * sin(e)).toFixed(2);
+    const ix1 = (CX + IR * cos(e)).toFixed(2), iy1 = (CY + IR * sin(e)).toFixed(2);
+    const ix2 = (CX + IR * cos(s)).toFixed(2), iy2 = (CY + IR * sin(s)).toFixed(2);
+    const lg = e - s > Math.PI ? 1 : 0;
+    return `M ${x1} ${y1} A ${R} ${R} 0 ${lg} 1 ${x2} ${y2} L ${ix1} ${iy1} A ${IR} ${IR} 0 ${lg} 0 ${ix2} ${iy2} Z`;
+  };
+
+  return (
+    <div className="flex flex-col sm:flex-row items-center gap-8">
+      <div className="relative shrink-0">
+        <svg viewBox="0 0 192 192" className="w-44 h-44">
+          {slices.map((sl, i) => (
+            <path key={i} d={arcPath(sl.s, sl.e)} fill={sl.color} opacity={0.9} />
+          ))}
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          <p className="font-mono text-xs text-muted">Total</p>
+          <p className="font-mono text-sm font-bold tabular">
+            ${totalEquity.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+          </p>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-x-8 gap-y-2">
+        {slices.map((sl, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ background: sl.color }} />
+            <span className="font-mono text-sm font-semibold w-12">{sl.symbol}</span>
+            <span className="font-mono text-sm tabular text-muted">{(sl.weight * 100).toFixed(1)}%</span>
+            <span className="font-mono text-xs tabular text-muted">
+              ${sl.usdValue.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ─── Cone chart (SVG) ────────────────────────────────────────────────────────
 
@@ -134,7 +197,7 @@ function buildWhy(
   return txt;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Small shared components ──────────────────────────────────────────────────
 
 function LiveBadge({ label }: { label: string }) {
   return (
@@ -164,16 +227,16 @@ export default function AnalysisPage() {
   const { isConnected } = useAccount();
   const { portfolio: walletPortfolio, isLoading: walletLoading, hasBalances } = useWalletPortfolio();
 
-  const [demoSelected,      setDemoSelected]      = useState<PortfolioName>("client_alpha");
-  const [metrics,           setMetrics]           = useState<PortfolioMetrics | null>(null);
-  const [livePortfolio,     setLivePortfolio]     = useState<Portfolio | null>(null);
-  const [liveCalibration,   setLiveCalibration]   = useState<Calibration | null>(null);
-  const [loading,           setLoading]           = useState(false);
-  const [error,             setError]             = useState<string | null>(null);
-  const [dataSource,        setDataSource]        = useState<DataSource>(null);
-  const [asOf,              setAsOf]              = useState<string | null>(null);
+  const [activeTab,          setActiveTab]          = useState<Tab>("portfolio");
+  const [demoSelected,       setDemoSelected]       = useState<PortfolioName>("client_alpha");
+  const [metrics,            setMetrics]            = useState<PortfolioMetrics | null>(null);
+  const [livePortfolio,      setLivePortfolio]      = useState<Portfolio | null>(null);
+  const [liveCalibration,    setLiveCalibration]    = useState<Calibration | null>(null);
+  const [loading,            setLoading]            = useState(false);
+  const [error,              setError]              = useState<string | null>(null);
+  const [dataSource,         setDataSource]         = useState<DataSource>(null);
+  const [asOf,               setAsOf]               = useState<string | null>(null);
 
-  // simulation controls
   const [hedge,       setHedge]       = useState(0);
   const [sliderPct,   setSliderPct]   = useState(0);
   const [instrument,  setInstrument]  = useState<Instrument>("BTC");
@@ -229,13 +292,11 @@ export default function AnalysisPage() {
     })();
   }, [isConnected, walletLoading, hasBalances, walletPortfolio, demoSelected]);
 
-  // deterministic simulation — runs synchronously (~10–30 ms per run)
   const simResult = useMemo<SimResult | null>(() => {
     if (!livePortfolio || !liveCalibration) return null;
     return simulate(livePortfolio, liveCalibration, { h: hedge, instrument, horizonDays: horizon });
   }, [livePortfolio, liveCalibration, hedge, instrument, horizon]);
 
-  // unhedged baseline for ghost cone and floor-lift text
   const baseSim = useMemo<SimResult | null>(() => {
     if (!livePortfolio || !liveCalibration || hedge === 0) return null;
     return simulate(livePortfolio, liveCalibration, { h: 0, instrument: "BTC", horizonDays: horizon });
@@ -252,6 +313,8 @@ export default function AnalysisPage() {
   const fundRate = instrument === "BTC"
     ? (liveCalibration?.funding_annual ?? 0)
     : (liveCalibration?.mstr_borrow_annual ?? 0);
+
+  const ready = simResult && !loading && !walletLoading;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -286,8 +349,8 @@ export default function AnalysisPage() {
               <p className="text-xs uppercase tracking-widest text-muted">
                 {hasBalances ? "Your wallet · Arbitrum" : "Demo portfolio"}
               </p>
-              {dataSource === "wallet"    && asOf && <LiveBadge label={`Live · ${asOf}`} />}
-              {dataSource === "demo-live" && asOf && <LiveBadge label={`Live prices · ${asOf}`} />}
+              {dataSource === "wallet"      && asOf && <LiveBadge label={`Live · ${asOf}`} />}
+              {dataSource === "demo-live"   && asOf && <LiveBadge label={`Live prices · ${asOf}`} />}
               {dataSource === "demo-static" && (
                 <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted">Snapshot</span>
               )}
@@ -296,7 +359,6 @@ export default function AnalysisPage() {
                 <span className="text-[11px] text-muted">No supported tokens on Arbitrum — showing demo</span>
               )}
             </div>
-
             {!hasBalances && !walletLoading && (
               <>
                 <div className="flex flex-wrap gap-2">
@@ -324,230 +386,279 @@ export default function AnalysisPage() {
           {/* Loading skeleton */}
           {(loading || walletLoading) && (
             <div className="space-y-4">
+              <div className="h-10 w-64 animate-pulse rounded-lg border border-border bg-surface" />
               <div className="h-56 animate-pulse rounded-xl border border-border bg-surface" />
               <div className="grid grid-cols-2 gap-4">
                 <div className="h-28 animate-pulse rounded-xl border border-border bg-surface" />
                 <div className="h-28 animate-pulse rounded-xl border border-border bg-surface" />
               </div>
-              <div className="h-16 animate-pulse rounded-xl border border-border bg-surface" />
             </div>
           )}
 
-          {/* ── Simulation dashboard ── */}
-          {simResult && !loading && !walletLoading && (
+          {/* ── Tabs ── */}
+          {ready && (
             <>
-              {/* Cone hero */}
-              <div className="rounded-xl border border-border bg-surface p-5">
-                <div className="grid grid-cols-[110px_1fr] gap-5 items-start">
-                  <div className="flex flex-col gap-5">
-                    <div>
-                      <p className="text-[10px] uppercase tracking-widest text-muted mb-1">1-in-20 worst case</p>
-                      <p className="font-mono text-3xl font-bold tabular text-downside leading-none">
-                        {fmtPct(simResult.final.worstCase5pctReturn)}
-                      </p>
-                      <p className="font-mono text-xs text-muted mt-1 tabular">
-                        {usd(simResult.final.worstCase5pctReturn)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-widest text-muted mb-1">Median outcome</p>
-                      <p className={`font-mono text-3xl font-bold tabular leading-none ${simResult.final.medianReturn >= 0 ? "text-upside" : "text-downside"}`}>
-                        {fmtPct(simResult.final.medianReturn)}
-                      </p>
-                      <p className="font-mono text-xs text-muted mt-1 tabular">
-                        {usd(simResult.final.medianReturn)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div>
-                    <ConeChart sim={simResult} baseSim={baseSim} horizon={horizon} />
-                    <p className="text-[10px] text-muted mt-2 text-center">
-                      3,000 simulated paths · single-factor zero-drift model ·{" "}
-                      {horizon}d{liveCalibration?.as_of
-                        ? ` · calibrated from live market data as of ${new Date(liveCalibration.as_of).toLocaleDateString()}`
-                        : " · snapshot calibration"}
-                    </p>
-                  </div>
-                </div>
+              {/* Tab bar */}
+              <div className="flex gap-1 rounded-lg border border-border bg-surface-2 p-1 w-fit">
+                {(["portfolio", "risk"] as Tab[]).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`rounded-md px-5 py-2 text-sm font-medium transition-colors ${
+                      activeTab === tab
+                        ? "bg-surface text-foreground shadow-sm"
+                        : "text-muted hover:text-foreground"
+                    }`}
+                  >
+                    {tab === "portfolio" ? "Portfolio" : "Risk & Hedging"}
+                  </button>
+                ))}
               </div>
 
-              {/* Controls row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Hedge */}
-                <div className="rounded-xl border border-border bg-surface p-5 space-y-5">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-widest text-muted mb-2">Hedge instrument</p>
-                    <div className="flex rounded-lg border border-border bg-surface-2 p-1 gap-1">
-                      {(["BTC", "MSTR"] as Instrument[]).map((i) => (
-                        <button
-                          key={i}
-                          onClick={() => setInstrument(i)}
-                          className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                            instrument === i ? "bg-surface text-foreground shadow-sm" : "text-muted hover:text-foreground"
-                          }`}
-                        >
-                          {i === "BTC" ? "Short BTC" : "Short MSTR"}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="mt-2 text-[11px] text-muted leading-relaxed">
-                      {instrument === "BTC"
-                        ? "Short BTC perps neutralise your portfolio's BTC market factor directly."
-                        : "Short MSTR in any stock brokerage — accessible if you can't short crypto. Tracks the same BTC factor but adds basis risk."}
-                    </p>
+              {/* ── Tab 1: Portfolio ── */}
+              {activeTab === "portfolio" && metrics && (
+                <div className="space-y-6">
+                  {/* Summary stats row */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <Tile
+                      label="Total value"
+                      value={`$${metrics.totalEquity.toLocaleString("en-US", { minimumFractionDigits: 2 })}`}
+                      title="Portfolio value in USD."
+                    />
+                    <Tile
+                      label="Effective BTC beta"
+                      value={`${metrics.effectiveBeta.toFixed(2)}x`}
+                      color="amber"
+                      title="How much your portfolio moves with BTC. 1x = moves dollar-for-dollar with BTC."
+                    />
+                    <Tile
+                      label="BTC risk share"
+                      value={`${(metrics.btcShare * 100).toFixed(0)}%`}
+                      color={metrics.btcShare > 0.8 ? "coral" : metrics.btcShare > 0.5 ? "amber" : undefined}
+                      title="Fraction of your total variance explained by the BTC factor."
+                    />
                   </div>
 
-                  <div>
-                    <p className="text-[10px] uppercase tracking-widest text-muted mb-2">Hedge amount</p>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="range" min={0} max={100} value={sliderPct}
-                        onChange={(e) => onSlider(+e.target.value)}
-                        className="flex-1 h-1 rounded-full appearance-none cursor-pointer accent-accent"
-                        aria-label="Hedge amount, percent of portfolio value"
-                      />
-                      <span className="font-mono text-sm font-semibold text-accent min-w-[36px] text-right tabular">
-                        {sliderPct}%
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Horizon */}
-                <div className="rounded-xl border border-border bg-surface p-5 space-y-4">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-widest text-muted mb-2">Horizon</p>
-                    <div className="flex rounded-lg border border-border bg-surface-2 p-1 gap-1">
-                      {([7, 30, 90] as Horizon[]).map((d) => (
-                        <button
-                          key={d}
-                          onClick={() => setHorizon(d)}
-                          className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                            horizon === d ? "bg-surface text-foreground shadow-sm" : "text-muted hover:text-foreground"
-                          }`}
-                        >
-                          {d}d
-                        </button>
-                      ))}
-                    </div>
-                    <p className="mt-2 text-[11px] text-muted">
-                      {horizon === 7 ? "A bad week" : horizon === 30 ? "A bad month" : "A bad quarter"} scenario window.
-                    </p>
+                  {/* Pie chart */}
+                  <div className="rounded-xl border border-border bg-surface p-6">
+                    <p className="text-[10px] uppercase tracking-widest text-muted mb-5">Allocation</p>
+                    <PieChart coins={metrics.coins} totalEquity={metrics.totalEquity} />
                   </div>
 
-                  <div className="pt-3 border-t border-border">
-                    <div className="flex justify-between text-xs text-muted">
-                      <span>{instrument === "BTC" ? "BTC funding (ann.)" : "MSTR borrow (ann.)"}</span>
-                      <span className="font-mono tabular">{(fundRate * 100).toFixed(2)}%/yr</span>
-                    </div>
-                    <div className="flex justify-between text-xs text-muted mt-1">
-                      <span>BTC factor vol (daily)</span>
-                      <span className="font-mono tabular">
-                        {((liveCalibration?.btc_factor_vol_daily ?? 0) * 100).toFixed(2)}%
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Stat tiles — 7 across */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-                <Tile
-                  label="Median outcome"
-                  value={fmtPct(simResult.final.medianReturn)}
-                  color={simResult.final.medianReturn >= 0 ? "teal" : "coral"}
-                  title="Your middle result; half of scenarios do better, half worse."
-                />
-                <Tile
-                  label="1-in-20 downside"
-                  value={fmtPct(simResult.final.worstCase5pctReturn)}
-                  color="coral"
-                  title="A realistic bad outcome — worse than this only ~5% of the time."
-                />
-                <Tile
-                  label="Typical max drawdown"
-                  value={`-${(-simResult.final.typicalMaxDrawdown * 100).toFixed(1)}%`}
-                  color="coral"
-                  title="The usual worst dip from a peak along the way, before any recovery."
-                />
-                <Tile
-                  label="Chance loss >25%"
-                  value={`${(simResult.final.probLossGt25pct * 100).toFixed(1)}%`}
-                  color="coral"
-                  title="How often you would lose more than a quarter of your money."
-                />
-                <Tile
-                  label="Effective BTC beta"
-                  value={`${simResult.effectiveBeta.toFixed(2)}x`}
-                  color="amber"
-                  title="How hard your portfolio still moves with BTC after hedging (0 = market-neutral)."
-                />
-                <Tile
-                  label={instrument === "BTC" ? "BTC funding" : "MSTR borrow"}
-                  value={`${(fundRate * 100).toFixed(1)}%/yr`}
-                  title="Annual rate to hold the hedge; a market rate, not advice."
-                />
-                <Tile
-                  label="Cost of insurance"
-                  value={
-                    Math.abs(simResult.carryOverHorizonPct * equity) < 0.5
-                      ? "$0"
-                      : `-$${Math.round(simResult.carryOverHorizonPct * equity).toLocaleString()}`
-                  }
-                  color={simResult.carryOverHorizonPct * equity >= 0.5 ? "coral" : undefined}
-                  title="Dollar cost of holding the hedge over the horizon."
-                />
-              </div>
-
-              {/* Why these numbers */}
-              <div className="rounded-xl border border-border bg-surface p-5">
-                <p className="text-[10px] uppercase tracking-widest text-muted mb-3">Why these numbers</p>
-                <p
-                  className="text-sm leading-relaxed text-foreground"
-                  dangerouslySetInnerHTML={{
-                    __html: buildWhy(
-                      simResult, baseSim, hedge, instrument, horizon,
-                      livePortfolio?.result.list[0].coin.length ?? 0,
-                    )
-                    .replace(/([\+\-]?\d+\.?\d*%)/g, '<em class="text-accent font-semibold not-italic">$1</em>')
-                    .replace(/(\d+\.\d+x)/g,          '<em class="text-accent font-semibold not-italic">$1</em>')
-                    .replace(/(\$[\d,]+)/g,            '<em class="text-accent font-semibold not-italic">$1</em>'),
-                  }}
-                />
-              </div>
-
-              {/* Holdings table */}
-              {metrics && (
-                <div className="overflow-hidden rounded-xl border border-border bg-surface">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border text-left text-[10px] uppercase tracking-widest text-muted">
-                        <th className="px-5 py-3">Asset</th>
-                        <th className="px-5 py-3 text-right">Qty</th>
-                        <th className="px-5 py-3 text-right">Value (USD)</th>
-                        <th className="px-5 py-3 text-right">Weight</th>
-                        <th className="px-5 py-3 text-right">Beta</th>
-                        <th className="px-5 py-3 text-right">Daily idio σ</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {metrics.coins.map((c, i) => (
-                        <tr key={c.symbol} className={`border-b border-border last:border-0 ${i % 2 !== 0 ? "bg-surface-2/40" : ""}`}>
-                          <td className="px-5 py-3 font-semibold">{c.symbol}</td>
-                          <td className="px-5 py-3 text-right font-mono text-muted tabular">
-                            {c.walletBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
-                          </td>
-                          <td className="px-5 py-3 text-right font-mono text-muted tabular">
-                            ${c.usdValue.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                          </td>
-                          <td className="px-5 py-3 text-right font-mono tabular">{(c.weight * 100).toFixed(1)}%</td>
-                          <td className="px-5 py-3 text-right font-mono tabular">{c.beta.toFixed(3)}</td>
-                          <td className="px-5 py-3 text-right font-mono text-muted tabular">{(c.idio_vol_daily * 100).toFixed(2)}%</td>
+                  {/* Holdings table */}
+                  <div className="overflow-hidden rounded-xl border border-border bg-surface">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border text-left text-[10px] uppercase tracking-widest text-muted">
+                          <th className="px-5 py-3">Asset</th>
+                          <th className="px-5 py-3 text-right">Qty</th>
+                          <th className="px-5 py-3 text-right">Value (USD)</th>
+                          <th className="px-5 py-3 text-right">Weight</th>
+                          <th className="px-5 py-3 text-right">Beta</th>
+                          <th className="px-5 py-3 text-right">Daily idio σ</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {metrics.coins.map((c, i) => (
+                          <tr key={c.symbol} className={`border-b border-border last:border-0 ${i % 2 !== 0 ? "bg-surface-2/40" : ""}`}>
+                            <td className="px-5 py-3 font-semibold">{c.symbol}</td>
+                            <td className="px-5 py-3 text-right font-mono text-muted tabular">
+                              {c.walletBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+                            </td>
+                            <td className="px-5 py-3 text-right font-mono text-muted tabular">
+                              ${c.usdValue.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="px-5 py-3 text-right font-mono tabular">{(c.weight * 100).toFixed(1)}%</td>
+                            <td className="px-5 py-3 text-right font-mono tabular">{c.beta.toFixed(3)}</td>
+                            <td className="px-5 py-3 text-right font-mono text-muted tabular">{(c.idio_vol_daily * 100).toFixed(2)}%</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Tab 2: Risk & Hedging ── */}
+              {activeTab === "risk" && simResult && (
+                <div className="space-y-6">
+                  {/* Cone hero */}
+                  <div className="rounded-xl border border-border bg-surface p-5">
+                    <div className="grid grid-cols-[110px_1fr] gap-5 items-start">
+                      <div className="flex flex-col gap-5">
+                        <div>
+                          <p className="text-[10px] uppercase tracking-widest text-muted mb-1">1-in-20 worst case</p>
+                          <p className="font-mono text-3xl font-bold tabular text-downside leading-none">
+                            {fmtPct(simResult.final.worstCase5pctReturn)}
+                          </p>
+                          <p className="font-mono text-xs text-muted mt-1 tabular">
+                            {usd(simResult.final.worstCase5pctReturn)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-widest text-muted mb-1">Median outcome</p>
+                          <p className={`font-mono text-3xl font-bold tabular leading-none ${simResult.final.medianReturn >= 0 ? "text-upside" : "text-downside"}`}>
+                            {fmtPct(simResult.final.medianReturn)}
+                          </p>
+                          <p className="font-mono text-xs text-muted mt-1 tabular">
+                            {usd(simResult.final.medianReturn)}
+                          </p>
+                        </div>
+                      </div>
+                      <div>
+                        <ConeChart sim={simResult} baseSim={baseSim} horizon={horizon} />
+                        <p className="text-[10px] text-muted mt-2 text-center">
+                          3,000 simulated paths · single-factor zero-drift model ·{" "}
+                          {horizon}d{liveCalibration?.as_of
+                            ? ` · calibrated from live market data as of ${new Date(liveCalibration.as_of).toLocaleDateString()}`
+                            : " · snapshot calibration"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Controls row */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Hedge */}
+                    <div className="rounded-xl border border-border bg-surface p-5 space-y-5">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-muted mb-2">Hedge instrument</p>
+                        <div className="flex rounded-lg border border-border bg-surface-2 p-1 gap-1">
+                          {(["BTC", "MSTR"] as Instrument[]).map((i) => (
+                            <button
+                              key={i}
+                              onClick={() => setInstrument(i)}
+                              className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                                instrument === i ? "bg-surface text-foreground shadow-sm" : "text-muted hover:text-foreground"
+                              }`}
+                            >
+                              {i === "BTC" ? "Short BTC" : "Short MSTR"}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="mt-2 text-[11px] text-muted leading-relaxed">
+                          {instrument === "BTC"
+                            ? "Short BTC perps neutralise your portfolio's BTC market factor directly."
+                            : "Short MSTR in any stock brokerage — accessible if you can't short crypto. Tracks the same BTC factor but adds basis risk."}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-muted mb-2">Hedge amount</p>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="range" min={0} max={100} value={sliderPct}
+                            onChange={(e) => onSlider(+e.target.value)}
+                            className="flex-1 h-1 rounded-full appearance-none cursor-pointer accent-accent"
+                            aria-label="Hedge amount, percent of portfolio value"
+                          />
+                          <span className="font-mono text-sm font-semibold text-accent min-w-[36px] text-right tabular">
+                            {sliderPct}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Horizon */}
+                    <div className="rounded-xl border border-border bg-surface p-5 space-y-4">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-muted mb-2">Horizon</p>
+                        <div className="flex rounded-lg border border-border bg-surface-2 p-1 gap-1">
+                          {([7, 30, 90] as Horizon[]).map((d) => (
+                            <button
+                              key={d}
+                              onClick={() => setHorizon(d)}
+                              className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                                horizon === d ? "bg-surface text-foreground shadow-sm" : "text-muted hover:text-foreground"
+                              }`}
+                            >
+                              {d}d
+                            </button>
+                          ))}
+                        </div>
+                        <p className="mt-2 text-[11px] text-muted">
+                          {horizon === 7 ? "A bad week" : horizon === 30 ? "A bad month" : "A bad quarter"} scenario window.
+                        </p>
+                      </div>
+                      <div className="pt-3 border-t border-border">
+                        <div className="flex justify-between text-xs text-muted">
+                          <span>{instrument === "BTC" ? "BTC funding (ann.)" : "MSTR borrow (ann.)"}</span>
+                          <span className="font-mono tabular">{(fundRate * 100).toFixed(2)}%/yr</span>
+                        </div>
+                        <div className="flex justify-between text-xs text-muted mt-1">
+                          <span>BTC factor vol (daily)</span>
+                          <span className="font-mono tabular">
+                            {((liveCalibration?.btc_factor_vol_daily ?? 0) * 100).toFixed(2)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stat tiles */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+                    <Tile
+                      label="Median outcome"
+                      value={fmtPct(simResult.final.medianReturn)}
+                      color={simResult.final.medianReturn >= 0 ? "teal" : "coral"}
+                      title="Your middle result; half of scenarios do better, half worse."
+                    />
+                    <Tile
+                      label="1-in-20 downside"
+                      value={fmtPct(simResult.final.worstCase5pctReturn)}
+                      color="coral"
+                      title="A realistic bad outcome — worse than this only ~5% of the time."
+                    />
+                    <Tile
+                      label="Typical max drawdown"
+                      value={`-${(-simResult.final.typicalMaxDrawdown * 100).toFixed(1)}%`}
+                      color="coral"
+                      title="The usual worst dip from a peak along the way, before any recovery."
+                    />
+                    <Tile
+                      label="Chance loss >25%"
+                      value={`${(simResult.final.probLossGt25pct * 100).toFixed(1)}%`}
+                      color="coral"
+                      title="How often you would lose more than a quarter of your money."
+                    />
+                    <Tile
+                      label="Effective BTC beta"
+                      value={`${simResult.effectiveBeta.toFixed(2)}x`}
+                      color="amber"
+                      title="How hard your portfolio still moves with BTC after hedging (0 = market-neutral)."
+                    />
+                    <Tile
+                      label={instrument === "BTC" ? "BTC funding" : "MSTR borrow"}
+                      value={`${(fundRate * 100).toFixed(1)}%/yr`}
+                      title="Annual rate to hold the hedge; a market rate, not advice."
+                    />
+                    <Tile
+                      label="Cost of insurance"
+                      value={
+                        Math.abs(simResult.carryOverHorizonPct * equity) < 0.5
+                          ? "$0"
+                          : `-$${Math.round(simResult.carryOverHorizonPct * equity).toLocaleString()}`
+                      }
+                      color={simResult.carryOverHorizonPct * equity >= 0.5 ? "coral" : undefined}
+                      title="Dollar cost of holding the hedge over the horizon."
+                    />
+                  </div>
+
+                  {/* Why these numbers */}
+                  <div className="rounded-xl border border-border bg-surface p-5">
+                    <p className="text-[10px] uppercase tracking-widest text-muted mb-3">Why these numbers</p>
+                    <p
+                      className="text-sm leading-relaxed text-foreground"
+                      dangerouslySetInnerHTML={{
+                        __html: buildWhy(
+                          simResult, baseSim, hedge, instrument, horizon,
+                          livePortfolio?.result.list[0].coin.length ?? 0,
+                        )
+                        .replace(/([\+\-]?\d+\.?\d*%)/g, '<em class="text-accent font-semibold not-italic">$1</em>')
+                        .replace(/(\d+\.\d+x)/g,          '<em class="text-accent font-semibold not-italic">$1</em>')
+                        .replace(/(\$[\d,]+)/g,            '<em class="text-accent font-semibold not-italic">$1</em>'),
+                      }}
+                    />
+                  </div>
                 </div>
               )}
             </>
