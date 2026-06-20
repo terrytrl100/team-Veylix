@@ -29,8 +29,14 @@ The big chart simulates **3,000 possible futures** for your portfolio and plots 
   the good-case zone.
 - **Amber line (middle)** = the **median** path — your most "middle-of-the-road" outcome.
 - **Coral line + dot (bottom)** = the **1-in-20 worst case** — see below.
+- **Faint grey band + dashed grey line** = your **unhedged** outcome, shown for comparison. As
+  you add a hedge, watch the coral worst-case lift *away* from this grey line — that gap is
+  exactly what the hedge buys you.
 - **Dashed horizontal line** = **break-even** (where you are today). Anything below it is a loss.
 - **Left axis** = return in **%**. **Bottom axis** = time, from today out to your chosen horizon.
+
+Under the chart, a line tells you the **data source and date** — the numbers are calibrated from
+real Bybit and MSTR market data, not made up.
 
 > The cone shows **risk and dispersion, not a prediction.** It assumes no expected gain or loss
 > (a "zero-drift" model) and focuses purely on *how spread out* the outcomes are. It does **not**
@@ -41,6 +47,9 @@ Above the chart, two headline numbers:
 - **1-in-20 worst case** — a realistic bad day. Out of 20 equally likely scenarios, one is at
   least this bad. (Statistically, the 5th-percentile outcome.)
 - **Median outcome** — the middle result; half of scenarios are better, half worse.
+
+Each shows both the **return (%)** and the **dollar value** your portfolio would land at — so
+"−19.6%" also reads as "≈ $19,980," whichever you find easier to picture.
 
 ---
 
@@ -74,6 +83,8 @@ wider cone (more time for things to move).
 ---
 
 ## The seven tiles
+
+*Tip: hover (or tap) any tile to see a one-line explanation of what it means.*
 
 | Tile | What it tells you |
 |---|---|
