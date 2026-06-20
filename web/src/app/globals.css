@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+/*
+ * Veylix theme tokens.
+ * The detailed visual identity is themed later (see docs / UX requirements);
+ * these tokens give a tasteful, on-brand neutral baseline and a single place
+ * to re-theme. Palette: dark cool-ink background, amber accent, coral = downside,
+ * teal = upside. Numbers use a monospace face with tabular figures.
+ */
+:root {
+  /* Surfaces — deep cool-ink, slightly blue; lifted panels; hairline borders */
+  --background: #0a0e14;
+  --surface: #111722;
+  --surface-2: #161d2b;
+  --border: #232c3d;
+
+  /* Text */
+  --foreground: #e6eaf2;
+  --muted: #8b97ad;
+
+  /* Meaning colours (reserved — never decoration) */
+  --accent: #f5a524; /* amber — used sparingly */
+  --downside: #ff6f6f; /* coral */
+  --upside: #4fd1c5; /* teal */
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-downside: var(--downside);
+  --color-upside: var(--upside);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Numbers must not jitter: tabular figures everywhere monospace is used. */
+.tabular,
+.font-mono {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
