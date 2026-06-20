@@ -1,0 +1,12 @@
+# Windows "mark of the web" download artifacts
+*Zone.Identifier
+
+# Internal planning / scratch docs — not part of the quant_engine deliverable.
+# (Kept locally; only the cross-team handoff contract is tracked.)
+assets/base_plan.md
+assets/local_db_idea.md
+assets/local_db_idea_review.md
+assets/implementation_plan.md
+
+# Front-end lane's UX spec (owned by another teammate, not this lane)
+ux/

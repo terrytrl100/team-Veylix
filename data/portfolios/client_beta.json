@@ -1,0 +1,20 @@
+{
+  "retCode": 0,
+  "retMsg": "OK",
+  "result": {
+    "list": [
+      {
+        "accountType": "UNIFIED",
+        "totalEquity": "12000.00",
+        "coin": [
+          { "coin": "SOL",  "usdValue": "4000.00", "walletBalance": "24.24"   },
+          { "coin": "DOGE", "usdValue": "3500.00", "walletBalance": "9210.5"  },
+          { "coin": "ETH",  "usdValue": "2500.00", "walletBalance": "0.714"   },
+          { "coin": "BTC",  "usdValue": "1500.00", "walletBalance": "0.01428" },
+          { "coin": "USDT", "usdValue": "500.00",  "walletBalance": "500"     }
+        ]
+      }
+    ]
+  },
+  "time": 1718879290000
+}

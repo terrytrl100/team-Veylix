@@ -1,0 +1,20 @@
+{
+  "as_of": "2026-06-20T00:00:00Z",
+  "source": "DEMO placeholders — to be replaced by bybit /v5/market/kline (crypto) + yfinance (MSTR)",
+  "lookback_days": 365,
+  "btc_factor_vol_daily": 0.032,
+  "funding_annual": 0.10,
+  "mstr_borrow_annual": 0.05,
+  "symbols": {
+    "BTC":  { "beta": 1.0,  "idio_vol_daily": 0.0   },
+    "ETH":  { "beta": 1.15, "idio_vol_daily": 0.021 },
+    "SOL":  { "beta": 1.6,  "idio_vol_daily": 0.038 },
+    "LINK": { "beta": 1.4,  "idio_vol_daily": 0.041 },
+    "DOGE": { "beta": 1.9,  "idio_vol_daily": 0.070 },
+    "USDT": { "beta": 0.0,  "idio_vol_daily": 0.0   }
+  },
+  "hedge_instruments": {
+    "MSTR": { "beta": 1.8, "idio_vol_daily": 0.045 }
+  },
+  "model_version": "v1"
+}
