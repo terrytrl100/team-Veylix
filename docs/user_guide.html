@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veylix — User Guide</title>
+  <style>
+    :root {
+      --bg: #090c12; --surface: #0f1520; --surface2: #161e2e;
+      --border: rgba(255,255,255,0.07); --text: #e9edf4; --muted: #6b7a99;
+      --amber: #f5a524; --coral: #ff6f6f; --teal: #4fd1c5;
+      --mono: ui-monospace,'SF Mono','Fira Code',monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; font-size: 15px; line-height: 1.65; }
+    .container { max-width: 820px; margin: 0 auto; padding: 0 22px; }
+    header { border-bottom: 1px solid var(--border); padding: 16px 0; position: sticky; top: 0; background: rgba(9,12,18,.9); backdrop-filter: blur(6px); }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .wordmark { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+    .wordmark span { color: var(--amber); }
+    .sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+    .pill { font-size: 11px; color: var(--muted); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 4px 11px; white-space: nowrap; }
+    main { padding: 30px 0 50px; }
+    .lede { font-size: 17px; color: var(--text); margin-bottom: 8px; }
+    .lede strong { color: var(--amber); font-weight: 600; }
+    .note { color: var(--muted); margin-bottom: 30px; }
+    h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--amber); margin: 34px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    h3 { font-size: 15px; margin: 20px 0 4px; color: var(--text); }
+    p { margin: 8px 0; color: #cdd6e4; }
+    ol, ul { margin: 8px 0 8px 22px; color: #cdd6e4; }
+    li { margin: 5px 0; }
+    strong { color: var(--text); font-weight: 600; }
+    .coral { color: var(--coral); } .teal { color: var(--teal); } .amber { color: var(--amber); }
+    code { font: 13px var(--mono); background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; color: #e9edf4; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin: 14px 0; }
+    .steps { counter-reset: s; list-style: none; margin-left: 0; }
+    .steps li { counter-increment: s; position: relative; padding-left: 34px; margin: 10px 0; }
+    .steps li::before { content: counter(s); position: absolute; left: 0; top: -1px; width: 22px; height: 22px; border-radius: 50%; background: var(--amber); color: #000; font: 700 12px var(--mono); display: flex; align-items: center; justify-content: center; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+    td:first-child { white-space: nowrap; font-weight: 600; color: var(--text); }
+    .callout { border-left: 3px solid var(--amber); background: var(--surface); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; color: #cdd6e4; }
+    .dl dt { font-weight: 600; color: var(--text); margin-top: 12px; }
+    .dl dd { color: #cdd6e4; margin: 2px 0 0 0; }
+    footer { border-top: 1px solid var(--border); padding: 20px 0 0; margin-top: 36px; font-size: 12px; color: var(--muted); font-style: italic; }
+    @media (max-width: 520px) { td:first-child { white-space: normal; } }
+  </style>
+</head>
+<body>
+<header>
+  <div class="container header-inner">
+    <div>
+      <div class="wordmark">Vey<span>lix</span></div>
+      <div class="sub">User Guide</div>
+    </div>
+    <div class="pill">Educational · not investment advice</div>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    <p class="lede"><strong>See the consequence first.</strong> Veylix shows you the <em>range of
+    ways your crypto portfolio could play out</em> over the next few weeks or months — and how
+    protecting it with a hedge changes that range — <strong>before</strong> you act.</p>
+    <p class="note">It is an <strong>educational and transparency tool, not investment advice.</strong>
+    It never tells you what to buy, sell, or hold. It shows you your risk in plain language, and
+    explains every number.</p>
+
+    <h2>How to use it (30 seconds)</h2>
+    <ol class="steps">
+      <li>Pick a <strong>portfolio</strong> (top of the controls).</li>
+      <li>Watch the <strong>chart</strong> (the “cone”) — it shows where your portfolio could land over time.</li>
+      <li>Drag the <strong>Hedge amount</strong> slider up and watch the worst-case (the bottom of the
+        cone) lift — and check what that protection <strong>costs</strong> in the tiles below.</li>
+    </ol>
+    <p>That’s the whole idea: <strong>see your downside, then see what it takes to cushion it.</strong></p>
+
+    <h2>The chart — your “outcome cone”</h2>
+    <p>The big chart simulates <strong>3,000 possible futures</strong> for your portfolio and plots the spread:</p>
+    <ul>
+      <li><strong>Shaded bands</strong> = how outcomes are distributed. The wider the cone, the more
+        uncertain your result. The <span class="coral">coral lower band</span> is the bad-case zone;
+        the <span class="teal">teal upper band</span> is the good-case zone.</li>
+      <li><strong class="amber">Amber line (middle)</strong> = the <strong>median</strong> path — your most middle-of-the-road outcome.</li>
+      <li><strong class="coral">Coral line + dot (bottom)</strong> = the <strong>1-in-20 worst case</strong>.</li>
+      <li><strong>Faint grey band + dashed grey line</strong> = your <strong>unhedged</strong> outcome, shown
+        for comparison. As you add a hedge, the coral worst-case lifts <em>away</em> from this grey line —
+        that gap is what the hedge buys you.</li>
+      <li><strong>Dashed horizontal line</strong> = <strong>break-even</strong> (where you are today). Below it is a loss.</li>
+      <li><strong>Left axis</strong> = return in <strong>%</strong>. <strong>Bottom axis</strong> = time, from today to your chosen horizon.</li>
+    </ul>
+    <p>Under the chart, a line shows the <strong>data source and date</strong> — the numbers are calibrated
+      from real Bybit and MSTR market data, not made up.</p>
+    <div class="callout">The cone shows <strong>risk and dispersion, not a prediction.</strong> It assumes
+      no expected gain or loss (a “zero-drift” model) and focuses purely on <em>how spread out</em> the
+      outcomes are. It does <strong>not</strong> forecast price.</div>
+    <p>Above the chart, two headline numbers:</p>
+    <ul>
+      <li><strong>1-in-20 worst case</strong> — a realistic bad day. Out of 20 equally likely scenarios,
+        one is at least this bad. (Statistically, the 5th-percentile outcome.)</li>
+      <li><strong>Median outcome</strong> — the middle result; half of scenarios are better, half worse.</li>
+    </ul>
+    <p>Each shows both the <strong>return (%)</strong> and the <strong>dollar value</strong> your portfolio
+      would land at — so “−19.6%” also reads as “≈ $19,980,” whichever you find easier to picture.</p>
+
+    <h2>The controls</h2>
+    <h3>Portfolio</h3>
+    <p>Switch between books to compare risk profiles. (In your own account this is your actual holdings.)
+      The pie chart and legend show what each book holds and the dollar value of each position.</p>
+
+    <h3>Hedge instrument — <span class="amber">Short BTC</span> vs <span class="amber">Short MSTR</span></h3>
+    <p>A hedge is a position that <strong>moves opposite to your portfolio</strong>, cushioning losses
+      when the market falls. You choose how to place it:</p>
+    <ul>
+      <li><strong>Short BTC</strong> — a short Bitcoin position (on a crypto exchange). The cleanest
+        hedge: it offsets your Bitcoin-driven risk directly.</li>
+      <li><strong>Short MSTR</strong> — short MicroStrategy stock in a <strong>normal brokerage</strong>,
+        for people who can’t or don’t want to short crypto. MSTR tracks Bitcoin, but <strong>loosely</strong>
+        — so it’s a weaker hedge (leaves more risk behind) and costs a stock-borrow fee instead of funding.</li>
+    </ul>
+
+    <h3>Hedge amount (the slider)</h3>
+    <p><strong>What share of your portfolio’s market risk you want to offset.</strong> 0% = no hedge;
+      100% = fully neutralise your Bitcoin exposure. As you drag it up, the coral worst-case lifts toward
+      break-even while the median barely moves — <strong>protect the bad case without giving up the middle.</strong></p>
+
+    <h3>Horizon — 7d / 30d / 90d</h3>
+    <p>How far into the future to look: one week, one month, or one quarter. Longer horizons mean a wider
+      cone (more time for things to move).</p>
+
+    <h2>The seven tiles</h2>
+    <p style="color:var(--muted)"><em>Tip: hover (or tap) any tile in the app to see a one-line explanation of what it means.</em></p>
+    <table>
+      <thead><tr><th>Tile</th><th>What it tells you</th></tr></thead>
+      <tbody>
+        <tr><td>Median outcome</td><td>Your middle-of-the-road result over the horizon. Half of scenarios do better, half worse.</td></tr>
+        <tr><td>1-in-20 downside</td><td>A realistic bad outcome — worse than this only ~5% of the time. The number to respect.</td></tr>
+        <tr><td>Typical max drawdown</td><td>The usual <em>worst dip along the way</em> — how far you’d typically fall from a peak before any recovery. Even an OK final result can have a scary mid-way dip.</td></tr>
+        <tr><td>Chance loss &gt;25%</td><td>How often (across all scenarios) you’d lose more than a quarter of your money. A blunt “how dangerous is this?” gauge.</td></tr>
+        <tr><td>Effective BTC beta</td><td>How strongly your portfolio still moves with Bitcoin <em>after</em> hedging. <code>1.0x</code> = moves like Bitcoin; <code>2.0x</code> = twice as much; <code>0</code> = market-neutral. Hedging pushes this toward 0.</td></tr>
+        <tr><td>BTC funding / MSTR borrow (ann.)</td><td>The annual <em>rate</em> it costs to hold your chosen hedge. Switches with the instrument. This is a market rate — it doesn’t change with your hedge size.</td></tr>
+        <tr><td>Cost of insurance</td><td>The actual <strong>dollar cost</strong> of holding your hedge over the horizon, at the current rate. This moves as you change the hedge amount and horizon. A hedge is insurance — this is the premium.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>“Why these numbers”</h2>
+    <p>The sentence below the tiles <strong>explains your situation in plain English</strong> and rewrites
+      itself whenever you change something. With no hedge, it names your biggest risk (e.g. <em>“~92% of
+      your risk is a single bet on BTC”</em>). With a hedge on, it tells you how much the downside floor
+      lifted and what it costs. No black box — every figure on screen is explained here.</p>
+
+    <h2>Key terms</h2>
+    <dl class="dl">
+      <dt>Hedge</dt><dd>A position that profits when your portfolio falls, softening the blow. Reduces downside but has an ongoing cost.</dd>
+      <dt>Beta (to BTC)</dt><dd>How hard something moves relative to Bitcoin. Bitcoin is 1.0; a coin with beta 1.6 tends to move ~1.6× as much — up <em>and</em> down.</dd>
+      <dt>Funding / borrow</dt><dd>The recurring fee for holding a short. For crypto shorts it’s the “funding rate”; for shorting a stock like MSTR it’s a “borrow fee.”</dd>
+      <dt>Drawdown</dt><dd>A peak-to-trough fall. Your <em>max drawdown</em> is the worst such fall over a period.</dd>
+      <dt>Monte Carlo</dt><dd>Running thousands of randomised “what-if” futures to map the full range of outcomes, instead of guessing a single one.</dd>
+    </dl>
+
+    <h2>Important to know</h2>
+    <ul>
+      <li><strong>Not advice.</strong> Veylix never recommends a position, allocation, or hedge. It shows and explains risk; the decisions are yours.</li>
+      <li><strong>Risk, not prediction.</strong> It models how <em>spread out</em> your outcomes could be — not which way the market will go.</li>
+      <li><strong>Snapshot pricing.</strong> Market parameters (volatility, correlations, funding) come from a recent snapshot, so numbers reflect recent conditions, not live tick-by-tick prices.</li>
+      <li><strong>Same inputs → same chart.</strong> The simulation is deterministic: identical settings always produce the identical cone, so any change you see reflects <em>your input</em>, not random noise.</li>
+    </ul>
+
+    <footer>
+      Simulated outcomes from a modelled-volatility engine, not forecasts. Veylix surfaces and explains
+      risk; it does not recommend any position. Educational use only — not investment advice.
+    </footer>
+
+  </div>
+</main>
+</body>
+</html>
