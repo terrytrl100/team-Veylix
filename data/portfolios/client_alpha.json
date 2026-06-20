@@ -1,0 +1,19 @@
+{
+  "retCode": 0,
+  "retMsg": "OK",
+  "result": {
+    "list": [
+      {
+        "accountType": "UNIFIED",
+        "totalEquity": "24860.00",
+        "coin": [
+          { "coin": "BTC",  "usdValue": "9000.00", "walletBalance": "0.0857" },
+          { "coin": "ETH",  "usdValue": "6500.00", "walletBalance": "1.857"  },
+          { "coin": "SOL",  "usdValue": "5360.00", "walletBalance": "32.48"  },
+          { "coin": "USDT", "usdValue": "4000.00", "walletBalance": "4000"   }
+        ]
+      }
+    ]
+  },
+  "time": 1718879290000
+}
