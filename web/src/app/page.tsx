@@ -18,7 +18,7 @@ export default function LandingPage() {
         </span>
         <div className="flex items-center gap-3">
           <Button variant="outline" asChild className="border-border bg-surface text-foreground hover:bg-surface-2 px-5 py-2.5 text-sm font-semibold sm:px-6 sm:py-3 sm:text-base">
-            <Link href="/demo">Demo</Link>
+            <Link href="/demo">Demo Video</Link>
           </Button>
           <GetStartedButton />
         </div>
