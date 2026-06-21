@@ -2,8 +2,7 @@ import Link from "next/link";
 import { GetStartedButton } from "@/components/get-started-button";
 import { Button } from "@/components/ui/button";
 
-// Replace this with your actual YouTube video ID when ready
-const YOUTUBE_VIDEO_ID = "dQw4w9WgXcQ";
+const YOUTUBE_VIDEO_ID = "4ARYLbXzF6Q";
 
 export const metadata = {
   title: "Demo — Veylix",
