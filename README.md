@@ -22,7 +22,7 @@
 >
 > **Veylix closes that gap.** See — before you act — how your positions and hedges reshape the full range of where your portfolio could land. Institutional risk math, in plain language, for free.
 
-<!-- 💡 https://www.youtube.com/watch?v=4ARYLbXzF6Q
+<!-- 💡 https://www.youtube.com/watch?v=4ARYLbXzF6Q -->
 
 ---
 
