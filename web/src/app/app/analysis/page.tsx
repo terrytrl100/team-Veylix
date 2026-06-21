@@ -6,41 +6,45 @@ import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import {
-  fetchPortfolio,
   fetchCalibration,
   applyLivePrices,
   computeMetrics,
-  PORTFOLIOS,
 } from "@/lib/engine-data";
-import type { PortfolioName } from "@/lib/engine-data";
 import type { Portfolio, Calibration, PortfolioMetrics } from "@/lib/types";
 import { fetchLivePrices, fetchLiveCalibration, bustPriceCache } from "@/lib/coingecko";
 import { RefreshCw } from "lucide-react";
 import { useWalletPortfolio } from "@/hooks/useWalletPortfolio";
 import { simulate } from "@/lib/veylix-sim";
+import { solveHedgeForVar } from "@/lib/hedge-solver";
+import ScenarioPanel from "@/components/ScenarioPanel";
+import AnchorReport from "@/components/AnchorReport";
 import type { SimResult, Instrument } from "@/lib/veylix-sim";
 
 type DataSource = "wallet" | "demo-live" | "demo-static" | null;
-type Horizon = 7 | 30 | 90;
+type Horizon = 1 | 7 | 30;
 type Tab = "portfolio" | "risk";
 
 // ─── Tooltip ─────────────────────────────────────────────────────────────────
 
-function InfoTip({ text, align = "center" }: {
+function InfoTip({ text, align = "center", direction = "up" }: {
   text: string;
   align?: "center" | "start" | "end";
+  direction?: "up" | "down";
 }) {
   const posClass =
     align === "start" ? "left-0" :
     align === "end"   ? "right-0" :
     "left-1/2 -translate-x-1/2";
+  const dirClass = direction === "down"
+    ? "top-[calc(100%+6px)]"
+    : "bottom-[calc(100%+6px)]";
   return (
     <span className="group relative inline-flex items-center shrink-0">
       <span className="cursor-help text-[11px] leading-none text-muted/40 hover:text-muted/80 select-none transition-colors">
         ⓘ
       </span>
       <span
-        className={`pointer-events-none absolute bottom-[calc(100%+6px)] ${posClass} z-50 w-56 rounded-lg border border-border bg-surface-2 p-2.5 text-[11px] leading-relaxed text-foreground shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-normal font-normal normal-case tracking-normal`}
+        className={`pointer-events-none absolute ${dirClass} ${posClass} z-50 w-56 rounded-lg border border-border bg-surface-2 p-2.5 text-[11px] leading-relaxed text-foreground shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-normal font-normal normal-case tracking-normal`}
       >
         {text}
       </span>
@@ -61,8 +65,12 @@ const TIPS = {
     "The share of your total risk that comes from Bitcoin's price moving. Even a portfolio of 10 different coins can be 90%+ one BTC bet — because most altcoins follow BTC closely.",
 
   // Holdings table columns
+  colQty:
+    "How many units of this asset are in the wallet. For BTC this might be 0.5; for USDT it might be 10,000.",
+  colValue:
+    "The current USD value of this holding — quantity × live price.",
   colWeight:
-    "What percentage of your total portfolio is in this asset. Weights add up to 100%.",
+    "What percentage of the total portfolio is in this asset. Weights add up to 100%.",
   colBeta:
     "How much this coin moves when Bitcoin moves 1%. BTC itself is 1.0. A coin with beta 1.5 typically rises or falls 1.5× as much as BTC.",
   colIdioVol:
@@ -70,7 +78,7 @@ const TIPS = {
 
   // Risk tab hero numbers
   heroWorstCase:
-    "The loss you'd see in the worst 1 in every 20 scenarios — only 5% of outcomes are worse. Think of it as a realistic bad outcome, not the absolute worst.",
+    "Value at Risk at 95% confidence — the loss your portfolio is not expected to exceed in 95% of scenarios over this period. Only the worst 1 in 20 outcomes fall below it. A standard institutional downside measure: a realistic bad case, not the absolute worst.",
   heroMedian:
     "The midpoint across all 3,000 simulated paths. Half the paths end up better than this, half worse. Not a prediction, just the most likely zone.",
 
@@ -94,7 +102,7 @@ const TIPS = {
   tileMedian:
     "The middle result across all simulations. Half of paths end up better, half worse.",
   tileWorstCase:
-    "Your realistic bad outcome — only 1 in 20 simulated paths ends up worse than this number.",
+    "Value at Risk (95%): only 1 in 20 simulated paths ends up worse than this number — your realistic bad case.",
   tileMaxDrawdown:
     "How far your portfolio typically falls from its highest point before recovering. Even if you end the period flat, you might sit through a painful dip along the way.",
   tileProbLoss25:
@@ -109,23 +117,28 @@ const TIPS = {
 
 // ─── Donut pie chart (SVG) ────────────────────────────────────────────────────
 
-const PIE_COLORS = [
-  "#f7931a","#627eea","#9945ff","#4fd1c5","#f5a524",
-  "#ff6f6f","#e879f9","#34d399","#60a5fa","#8b97ad",
-];
+const BRAND_COLORS: Record<string, string> = {
+  BTC:  "#f7931a", ETH:  "#627eea", USDT: "#26a17b", SOL:  "#9945ff",
+  LINK: "#2a5ada", DOGE: "#c2a633", PEPE: "#4aa84a", WIF:  "#cbb1e8",
+  FLOKI:"#e0a44a", BONK: "#f5a524",
+};
+const FALLBACK_COLORS = ["#8b97ad", "#4fd1c5", "#a78bd9", "#60a5fa"];
 
 function PieChart({ coins, totalEquity }: {
-  coins: Array<{ symbol: string; weight: number; usdValue: number }>;
+  coins: Array<{ symbol: string; weight: number; usdValue: number; walletBalance: number }>;
   totalEquity: number;
 }) {
   const R = 76, IR = 44, CX = 96, CY = 96;
   const visible = coins.filter((c) => c.weight > 0.001);
 
+  const [hovered, setHovered] = useState<{ symbol: string; weight: number; usdValue: number; walletBalance: number; color: string } | null>(null);
+  const [mouse, setMouse] = useState({ x: 0, y: 0 });
+
   let a = -Math.PI / 2;
   const slices = visible.map((c, i) => {
     const s = a;
     a += c.weight * 2 * Math.PI;
-    return { ...c, s, e: a, color: PIE_COLORS[i % PIE_COLORS.length] };
+    return { ...c, s, e: a, color: BRAND_COLORS[c.symbol] ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length] };
   });
 
   const arcPath = (s: number, e: number) => {
@@ -139,11 +152,25 @@ function PieChart({ coins, totalEquity }: {
   };
 
   return (
-    <div className="flex flex-col sm:flex-row items-center gap-8">
+    <div
+      className="flex flex-col sm:flex-row items-center gap-8"
+      onMouseMove={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        setMouse({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+      }}
+    >
       <div className="relative shrink-0">
         <svg viewBox="0 0 192 192" className="w-44 h-44">
           {slices.map((sl, i) => (
-            <path key={i} d={arcPath(sl.s, sl.e)} fill={sl.color} opacity={0.9} />
+            <path
+              key={i}
+              d={arcPath(sl.s, sl.e)}
+              fill={sl.color}
+              opacity={hovered && hovered.symbol !== sl.symbol ? 0.4 : 0.9}
+              className="cursor-pointer transition-opacity duration-100"
+              onMouseEnter={() => setHovered(sl)}
+              onMouseLeave={() => setHovered(null)}
+            />
           ))}
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -152,6 +179,25 @@ function PieChart({ coins, totalEquity }: {
             ${totalEquity.toLocaleString("en-US", { maximumFractionDigits: 0 })}
           </p>
         </div>
+
+        {/* Hover tooltip */}
+        {hovered && (
+          <div
+            className="pointer-events-none absolute z-50 rounded-lg border border-border bg-surface-2 px-3 py-2 shadow-xl text-xs space-y-0.5"
+            style={{ left: mouse.x + 12, top: mouse.y - 10 }}
+          >
+            <p className="font-semibold text-foreground flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full shrink-0" style={{ background: hovered.color }} />
+              {(hovered.weight * 100).toFixed(1)}% {hovered.symbol}
+            </p>
+            <p className="font-mono tabular text-muted">
+              ${hovered.usdValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+            <p className="font-mono tabular text-muted">
+              {hovered.walletBalance.toLocaleString("en-US", { maximumFractionDigits: 6 })} {hovered.symbol}
+            </p>
+          </div>
+        )}
       </div>
       <div className="flex flex-wrap gap-x-8 gap-y-2">
         {slices.map((sl, i) => (
@@ -209,7 +255,7 @@ function ConeChart({ sim, baseSim, horizon }: { sim: SimResult; baseSim: SimResu
   const polyline = (rs: ConeRow[], key: keyof ConeRow) =>
     rs.map((r, t) => `${t === 0 ? "M" : "L"} ${cx(t)},${cy(r[key])}`).join(" ");
 
-  const xTickMap: Record<number, number[]> = { 7: [0,1,2,3,4,5,6,7], 30: [0,7,14,21,30], 90: [0,30,60,90] };
+  const xTickMap: Record<number, number[]> = { 1: [0, 1], 7: [0,1,2,3,4,5,6,7], 30: [0,7,14,21,30] };
   const xTicks = xTickMap[H] ?? [0, H];
   const yTicks = Array.from({ length: 6 }, (_, i) => mn + (i / 5) * rng);
   const zeroY  = cy(0);
@@ -320,6 +366,149 @@ function RateRow({ label, value, tip }: { label: string; value: string; tip?: st
   );
 }
 
+// ─── Hedge solver (solve-for-target-VaR) ──────────────────────────────────────
+// Inverts the engine: given a target 95% VaR, finds the hedge ratio that the
+// model implies, by solving against the real simulation (carry cost included).
+// A calculator, not advice — it answers "to reach X, the model implies Y".
+
+function HedgeSolver({
+  portfolio, calibration, instrument, horizon, btcPrice, currentVar, onApply,
+}: {
+  portfolio: Portfolio;
+  calibration: Calibration;
+  instrument: Instrument;
+  horizon: Horizon;
+  btcPrice: number | null;
+  currentVar: number;
+  onApply: (hPct: number) => void;
+}) {
+  const [targetPct, setTargetPct] = useState("15");
+  const [result, setResult] = useState<ReturnType<typeof solveHedgeForVar> | null>(null);
+  const [solving, setSolving] = useState(false);
+
+  const onSolve = useCallback(() => {
+    const t = parseFloat(targetPct);
+    if (!isFinite(t) || t <= 0) return;
+    setSolving(true);
+    // Defer so the spinner can paint before the synchronous solve runs.
+    setTimeout(() => {
+      const sol = solveHedgeForVar({
+        portfolio, calibration, instrument, horizonDays: horizon,
+        targetVar: -Math.abs(t) / 100,
+        btcPrice: btcPrice ?? undefined,
+      });
+      setResult(sol);
+      setSolving(false);
+    }, 10);
+  }, [targetPct, portfolio, calibration, instrument, horizon, btcPrice]);
+
+  const pf = (n: number) => (n >= 0 ? "+" : "") + (n * 100).toFixed(1) + "%";
+
+  return (
+    <div className="rounded-xl border border-border bg-surface p-5 space-y-4">
+      <div className="flex items-center gap-1 mb-1">
+        <p className="text-[10px] uppercase tracking-widest text-muted">Solve for a target</p>
+        <InfoTip
+          text="Enter a Value-at-Risk you'd like to target. The model inverts the simulation — including carry cost — to find the hedge ratio that gets there, and the position it implies. This is a calculation, not a recommendation."
+        />
+      </div>
+
+      <div className="flex items-end gap-3">
+        <div className="flex-1">
+          <div className="flex items-center justify-between">
+            <label className="text-[11px] text-muted">Target 95% VaR</label>
+            <button
+              onClick={() => setTargetPct(Math.abs(currentVar * 100).toFixed(1))}
+              className="text-[10px] text-accent hover:underline"
+            >
+              use current ({(currentVar * 100).toFixed(1)}%)
+            </button>
+          </div>
+          <div className="mt-1 flex items-center gap-1.5 rounded-lg border border-border bg-surface-2 px-3 py-2">
+            <span className="text-muted text-sm">−</span>
+            <input
+              type="number" min={0} max={99} step={0.5} value={targetPct}
+              onChange={(e) => setTargetPct(e.target.value)}
+              className="w-full bg-transparent text-sm text-foreground outline-none tabular font-mono"
+            />
+            <span className="text-muted text-sm">%</span>
+          </div>
+        </div>
+        <button
+          onClick={onSolve}
+          disabled={solving}
+          className="rounded-lg border border-accent/40 bg-accent/10 px-4 py-2 text-sm font-medium text-accent hover:bg-accent/20 transition-colors disabled:opacity-40"
+        >
+          {solving ? "Solving…" : "Solve"}
+        </button>
+      </div>
+
+      {result && !solving && (
+        <div className="rounded-lg border border-border bg-surface-2 p-3 space-y-2 text-sm">
+          {result.reached ? (
+            <>
+              <p className="text-foreground leading-relaxed">
+                To target a 95% VaR of{" "}
+                <span className="font-mono font-semibold text-downside">{pf(result.targetVar)}</span>,
+                the model implies a{" "}
+                <span className="font-mono font-semibold text-accent">{Math.round(result.h * 100)}%</span>{" "}
+                {instrument === "BTC" ? "short-BTC" : "short-MSTR"} hedge.
+              </p>
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-muted">Notional to short</p>
+                  <p className="font-mono tabular text-foreground">
+                    ${Math.round(result.notionalUsd).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-muted">
+                    {instrument === "BTC" ? "≈ BTC to short" : "Carry over horizon"}
+                  </p>
+                  <p className="font-mono tabular text-foreground">
+                    {instrument === "BTC"
+                      ? (result.units > 0 ? `${result.units.toFixed(4)} BTC` : "—")
+                      : pf(result.carryOverHorizonPct)}
+                  </p>
+                </div>
+              </div>
+              {instrument === "BTC" && (
+                <p className="text-[11px] text-muted">
+                  Carry cost over {horizon}d at this hedge: {pf(result.carryOverHorizonPct)}.
+                </p>
+              )}
+              <button
+                onClick={() => onApply(Math.round(result.h * 100))}
+                className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[12px] font-medium text-foreground hover:border-muted transition-colors"
+              >
+                Apply this hedge to the slider
+              </button>
+            </>
+          ) : (
+            <p className="text-foreground leading-relaxed">
+              A 95% VaR of <span className="font-mono font-semibold">{pf(result.targetVar)}</span> isn&apos;t
+              reachable with a {instrument === "BTC" ? "short-BTC" : "short-MSTR"} hedge — carry cost
+              outweighs further protection. The best this hedge achieves is{" "}
+              <span className="font-mono font-semibold text-accent">{pf(result.bestVar)}</span> at a{" "}
+              <span className="font-mono font-semibold text-accent">{Math.round(result.bestH * 100)}%</span> hedge.
+              <button
+                onClick={() => onApply(Math.round(result.bestH * 100))}
+                className="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[12px] font-medium text-foreground hover:border-muted transition-colors"
+              >
+                Apply the best achievable hedge
+              </button>
+            </p>
+          )}
+          <p className="text-[10px] text-muted/70 leading-relaxed pt-1">
+            Calculated by inverting the simulation — not financial advice. VaR is a confidence
+            level from the model, not a guaranteed floor.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AnalysisPage() {
@@ -328,7 +517,6 @@ export default function AnalysisPage() {
   const { portfolio: walletPortfolio, isLoading: walletLoading, hasBalances } = useWalletPortfolio();
 
   const [activeTab,        setActiveTab]        = useState<Tab>("portfolio");
-  const [demoSelected,     setDemoSelected]     = useState<PortfolioName>("client_alpha");
   const [metrics,          setMetrics]          = useState<PortfolioMetrics | null>(null);
   const [livePortfolio,    setLivePortfolio]    = useState<Portfolio | null>(null);
   const [liveCalibration,  setLiveCalibration]  = useState<Calibration | null>(null);
@@ -336,6 +524,7 @@ export default function AnalysisPage() {
   const [error,            setError]            = useState<string | null>(null);
   const [dataSource,       setDataSource]       = useState<DataSource>(null);
   const [asOf,             setAsOf]             = useState<string | null>(null);
+  const [btcPrice,         setBtcPrice]         = useState<number | null>(null);
 
   const [hedge,      setHedge]      = useState(0);
   const [sliderPct,  setSliderPct]  = useState(0);
@@ -355,14 +544,25 @@ export default function AnalysisPage() {
 
   useEffect(() => {
     if (!isConnected || walletLoading) return;
+
+    // Connected wallet with no supported holdings: do NOT fall back to demo data.
+    // Clear any prior result and show the empty-wallet message instead.
+    if (!hasBalances || !walletPortfolio) {
+      setMetrics(null);
+      setLivePortfolio(null);
+      setLiveCalibration(null);
+      setDataSource(null);
+      setAsOf(null);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     const ALL_SYMBOLS = ["BTC","ETH","SOL","LINK","DOGE","PEPE","FLOKI","BONK","WIF","USDT"];
-    const sourcePortfolio: Promise<Portfolio> =
-      hasBalances && walletPortfolio
-        ? Promise.resolve(walletPortfolio)
-        : fetchPortfolio(demoSelected);
+    const sourcePortfolio: Promise<Portfolio> = Promise.resolve(walletPortfolio);
 
     (async () => {
       try {
@@ -375,7 +575,8 @@ export default function AnalysisPage() {
         setMetrics(computeMetrics(priced, calibration));
         setLivePortfolio(priced);
         setLiveCalibration(calibration);
-        setDataSource(hasBalances ? "wallet" : "demo-live");
+        setBtcPrice(prices["BTC"] ?? null);
+        setDataSource("wallet");
         setAsOf(new Date().toLocaleTimeString());
       } catch {
         try {
@@ -386,9 +587,9 @@ export default function AnalysisPage() {
           setMetrics(computeMetrics(portfolio, calibration));
           setLivePortfolio(portfolio);
           setLiveCalibration(calibration);
-          setDataSource("demo-static");
+          setDataSource("wallet");
           setAsOf(null);
-          setError("Live market data unavailable — showing snapshot.");
+          setError("Live market prices unavailable — showing your holdings at last-known prices.");
         } catch (e2) {
           setError((e2 as Error).message);
         }
@@ -396,7 +597,7 @@ export default function AnalysisPage() {
         setLoading(false);
       }
     })();
-  }, [isConnected, walletLoading, hasBalances, walletPortfolio, demoSelected, refreshKey]);
+  }, [isConnected, walletLoading, hasBalances, walletPortfolio, refreshKey]);
 
   const simResult = useMemo<SimResult | null>(() => {
     if (!livePortfolio || !liveCalibration) return null;
@@ -420,7 +621,8 @@ export default function AnalysisPage() {
     ? (liveCalibration?.funding_annual ?? 0)
     : (liveCalibration?.mstr_borrow_annual ?? 0);
 
-  const ready = simResult && !loading && !walletLoading;
+  const emptyWallet = isConnected && !walletLoading && !hasBalances;
+  const ready = simResult && !loading && !walletLoading && !emptyWallet;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -453,15 +655,11 @@ export default function AnalysisPage() {
           <div>
             <div className="mb-3 flex flex-wrap items-center gap-3">
               <p className="text-xs uppercase tracking-widest text-muted">
-                {hasBalances ? "Your wallet · Arbitrum" : "Demo portfolio"}
+                {emptyWallet ? "No holdings found" : "Your wallet · Arbitrum"}
               </p>
-              {dataSource === "wallet"      && asOf && <LiveBadge label={`Live · ${asOf}`} />}
-              {dataSource === "demo-live"   && asOf && <LiveBadge label={`Live prices · ${asOf}`} />}
-              {dataSource === "demo-static" && (
-                <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted">Snapshot</span>
-              )}
+              {dataSource === "wallet" && asOf && <LiveBadge label={`Live · ${asOf}`} />}
               {walletLoading && <span className="text-[11px] text-muted">Reading wallet…</span>}
-              {!walletLoading && (
+              {!walletLoading && !emptyWallet && (
                 <button
                   onClick={handleRefresh}
                   disabled={loading}
@@ -472,36 +670,26 @@ export default function AnalysisPage() {
                   {loading ? "Refreshing…" : "Refresh"}
                 </button>
               )}
-              {!walletLoading && !hasBalances && (
-                <span className="text-[11px] text-muted">No supported tokens on Arbitrum — showing demo</span>
-              )}
             </div>
-            {!hasBalances && !walletLoading && (
-              <>
-                <div className="flex flex-wrap gap-2">
-                  {(Object.keys(PORTFOLIOS) as PortfolioName[]).map((key) => (
-                    <button
-                      key={key}
-                      onClick={() => setDemoSelected(key)}
-                      className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
-                        demoSelected === key
-                          ? "border-accent bg-accent/10 text-accent"
-                          : "border-border bg-surface text-muted hover:border-muted"
-                      }`}
-                    >
-                      {PORTFOLIOS[key].label}
-                    </button>
-                  ))}
+            {emptyWallet && (
+              <div className="rounded-xl border border-border bg-surface px-5 py-6">
+                <p className="text-sm font-medium text-foreground">No holdings found in this wallet</p>
+                <p className="mt-1.5 text-sm text-muted">
+                  Veylix reads your live positions to model their downside risk. This wallet has no
+                  supported holdings on Arbitrum, so there&apos;s nothing to analyse yet. Connect a
+                  wallet that holds assets (e.g. ETH, WBTC, USDT) to see your risk profile.
+                </p>
+                <div className="mt-4">
+                  <ConnectButton showBalance={false} />
                 </div>
-                <p className="mt-2 text-xs text-muted">{PORTFOLIOS[demoSelected].description}</p>
-              </>
+              </div>
             )}
           </div>
 
           {error && <p className="text-xs text-downside">{error}</p>}
 
           {/* Loading skeleton */}
-          {(loading || walletLoading) && (
+          {(loading || walletLoading) && !emptyWallet && (
             <div className="space-y-4">
               <div className="h-10 w-64 animate-pulse rounded-lg border border-border bg-surface" />
               <div className="h-56 animate-pulse rounded-xl border border-border bg-surface" />
@@ -516,7 +704,9 @@ export default function AnalysisPage() {
           {ready && (
             <>
               {/* Tab bar */}
-              <div className="flex gap-1 rounded-lg border border-border bg-surface-2 p-1 w-fit">
+              <div className="flex items-center justify-between">
+                <div className="flex gap-1 rounded-lg border border-border bg-surface-2 p-1 w-fit">
+
                 {(["portfolio", "risk"] as Tab[]).map((tab) => (
                   <button
                     key={tab}
@@ -530,6 +720,16 @@ export default function AnalysisPage() {
                     {tab === "portfolio" ? "Portfolio" : "Risk & Hedging"}
                   </button>
                 ))}
+                </div>
+                {livePortfolio && liveCalibration && (
+                  <ScenarioPanel
+                    portfolio={livePortfolio}
+                    calibration={liveCalibration}
+                    h={hedge}
+                    instrument={instrument}
+                    horizon={horizon}
+                  />
+                )}
               </div>
 
               {/* ── Tab 1: Portfolio ── */}
@@ -568,24 +768,34 @@ export default function AnalysisPage() {
                       <thead>
                         <tr className="border-b border-border text-left text-[10px] uppercase tracking-widest text-muted">
                           <th className="px-5 py-3">Asset</th>
-                          <th className="px-5 py-3 text-right">Qty</th>
-                          <th className="px-5 py-3 text-right">Value (USD)</th>
+                          <th className="px-5 py-3 text-right">
+                            <span className="inline-flex items-center justify-end gap-1">
+                              Qty
+                              <InfoTip text={TIPS.colQty} align="end" direction="down" />
+                            </span>
+                          </th>
+                          <th className="px-5 py-3 text-right">
+                            <span className="inline-flex items-center justify-end gap-1">
+                              Value (USD)
+                              <InfoTip text={TIPS.colValue} align="end" direction="down" />
+                            </span>
+                          </th>
                           <th className="px-5 py-3 text-right">
                             <span className="inline-flex items-center justify-end gap-1">
                               Weight
-                              <InfoTip text={TIPS.colWeight} align="end" />
+                              <InfoTip text={TIPS.colWeight} align="end" direction="down" />
                             </span>
                           </th>
                           <th className="px-5 py-3 text-right">
                             <span className="inline-flex items-center justify-end gap-1">
                               Beta
-                              <InfoTip text={TIPS.colBeta} align="end" />
+                              <InfoTip text={TIPS.colBeta} align="end" direction="down" />
                             </span>
                           </th>
                           <th className="px-5 py-3 text-right">
                             <span className="inline-flex items-center justify-end gap-1">
                               Daily idio σ
-                              <InfoTip text={TIPS.colIdioVol} align="end" />
+                              <InfoTip text={TIPS.colIdioVol} align="end" direction="down" />
                             </span>
                           </th>
                         </tr>
@@ -620,7 +830,7 @@ export default function AnalysisPage() {
                       <div className="flex flex-col gap-5">
                         <div>
                           <div className="flex items-center gap-1 mb-1">
-                            <p className="text-[10px] uppercase tracking-widest text-muted">1-in-20 worst case</p>
+                            <p className="text-[10px] uppercase tracking-widest text-muted">Value at Risk (95%)</p>
                             <InfoTip text={TIPS.heroWorstCase} />
                           </div>
                           <p className="font-mono text-3xl font-bold tabular text-downside leading-none">
@@ -692,7 +902,7 @@ export default function AnalysisPage() {
                           <input
                             type="range" min={0} max={100} value={sliderPct}
                             onChange={(e) => onSlider(+e.target.value)}
-                            className="flex-1 h-1 rounded-full appearance-none cursor-pointer accent-accent"
+                            className="flex-1 h-1 rounded-full appearance-none cursor-pointer accent-accent bg-border"
                             aria-label="Hedge amount, percent of portfolio value"
                           />
                           <span className="font-mono text-sm font-semibold text-accent min-w-[36px] text-right tabular">
@@ -710,7 +920,7 @@ export default function AnalysisPage() {
                           <InfoTip text={TIPS.horizon} />
                         </div>
                         <div className="flex rounded-lg border border-border bg-surface-2 p-1 gap-1">
-                          {([7, 30, 90] as Horizon[]).map((d) => (
+                          {([1, 7, 30] as Horizon[]).map((d) => (
                             <button
                               key={d}
                               onClick={() => setHorizon(d)}
@@ -723,7 +933,7 @@ export default function AnalysisPage() {
                           ))}
                         </div>
                         <p className="mt-2 text-[11px] text-muted">
-                          {horizon === 7 ? "A bad week" : horizon === 30 ? "A bad month" : "A bad quarter"} scenario window.
+                          {horizon === 1 ? "A bad day" : horizon === 7 ? "A bad week" : "A bad month"} scenario window.
                         </p>
                       </div>
                       <div className="pt-3 border-t border-border space-y-1">
@@ -741,6 +951,19 @@ export default function AnalysisPage() {
                     </div>
                   </div>
 
+                  {/* Solve for a target VaR */}
+                  {livePortfolio && liveCalibration && (
+                    <HedgeSolver
+                      portfolio={livePortfolio}
+                      calibration={liveCalibration}
+                      instrument={instrument}
+                      horizon={horizon}
+                      btcPrice={btcPrice}
+                      currentVar={simResult.final.worstCase5pctReturn}
+                      onApply={(hPct) => { setSliderPct(hPct); setHedge(hPct / 100); }}
+                    />
+                  )}
+
                   {/* Stat tiles */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
                     <Tile
@@ -750,7 +973,7 @@ export default function AnalysisPage() {
                       tip={TIPS.tileMedian}
                     />
                     <Tile
-                      label="1-in-20 downside"
+                      label="Value at Risk"
                       value={fmtPct(simResult.final.worstCase5pctReturn)}
                       color="coral"
                       tip={TIPS.tileWorstCase}
@@ -806,6 +1029,18 @@ export default function AnalysisPage() {
                       }}
                     />
                   </div>
+
+                  {/* Anchor the base report on-chain */}
+                  {livePortfolio && liveCalibration && (
+                    <AnchorReport
+                      portfolio={livePortfolio}
+                      calibration={liveCalibration}
+                      scenarioOverrides={null}
+                      params={{ h: hedge, instrument, horizonDays: horizon }}
+                      sim={simResult}
+                      note="Anchor this risk report's fingerprint to Arbitrum, then download the data. Anyone can re-run the engine with these exact inputs (current hedge & horizon), re-hash, and confirm it matches the chain."
+                    />
+                  )}
                 </div>
               )}
             </>
@@ -816,8 +1051,7 @@ export default function AnalysisPage() {
       <footer className="border-t border-border">
         <div className="mx-auto w-full max-w-6xl px-6 py-6">
           <p className="text-xs leading-relaxed text-muted">
-            Simulated from modelled volatility — not forecasts or predictions of future prices.
-            Does not recommend any position, allocation, or hedge. Educational use only.
+            Educational use only.
           </p>
         </div>
       </footer>
