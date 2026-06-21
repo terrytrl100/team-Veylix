@@ -1,51 +1,56 @@
 # Veylix
 
-**Pre-trade risk visibility for retail crypto.** — *See the consequence first.*
+**Pre-trade risk visibility for retail crypto.**  
+*See the consequence first.* 🛡️
 
-> Retail crypto investors can buy, sell, hold, or hedge in seconds — but they can't easily see how any of it changes their portfolio's downside risk *before* they commit.
+> Retail traders can open, close, or hedge positions in seconds. They cannot easily see how those moves reshape their portfolio's realistic downside **before** they commit.
 
-Veylix closes that gap. Connect a wallet and it shows — before you act — how your positions and hedges reshape the full range of where your portfolio could land. Institutions manage this with scenario analysis, hedge ratios, and Monte Carlo simulation; retail gets price charts, PnL, and vibes. Veylix puts that same risk lens in retail hands, in plain language.
+Veylix puts institutional-grade risk tools (Monte Carlo simulation, VaR, dynamic hedging) into a single clean interface that runs in any browser. It is an **education and transparency tool only** — it never recommends positions or predicts prices.
 
-It is an **education and transparency tool, not an advice tool** — it surfaces and explains risk, and never recommends a position or predicts a price.
+**[🚀 Try the live demo](https://team-veylix-r656.vercel.app)**
 
-## What it does
+![Veylix main interface](screenshots/hero.png)
 
-- **Live portfolio** — connect a wallet (Arbitrum) and Veylix reads your real holdings on-chain, shown as a pie chart and a per-asset risk table: each asset's beta to Bitcoin and its idiosyncratic (Bitcoin-independent) risk. Tooltips explain every metric.
-- **Risk engine** — a Monte Carlo simulation of where your portfolio could land over a 1-day, 1-week, or 30-day horizon, drawn as percentile bands with the downside tail highlighted and distilled into one number: **Value at Risk (VaR)**, your realistic worst case.
-- **One-move hedge** — drag a slider to choose how much risk to hedge away and watch VaR fall in real time. Veylix computes the optimal BTC short from Bybit futures data, **funding-rate cost included**, so you see the price of protection before you commit. Where shorting crypto is restricted (e.g. the UK), it hedges via MSTR as a Bitcoin proxy.
-- **AI scenario agent** — powered by Claude Haiku 4.5, but not a chatbot. It has one job: reshape the simulation to match a named scenario ("FTX-style collapse," "black-swan crash," "war"). It adjusts only *visible* Monte Carlo parameters, so you see exactly what changed — with and without your hedge. No black box.
-- **On-chain verification** — every run is reproducible (fixed seed) and provable: a smart contract hashes the raw inputs onto the blockchain as a timestamped, immutable record (see below).
-- **Honest by design** — methodology stays on screen, hedging cost is never hidden, and the "not advice" posture is surfaced, not buried.
+## What it actually does
 
-*Modelling note: Veylix uses a zero-drift volatility model — it models **risk and dispersion, not predicted returns**.*
+- **Live portfolio view** — Connect Arbitrum wallet. See real holdings as a pie chart + per-asset risk table (beta to BTC + idiosyncratic risk). Every metric has clear tooltips.
+- **Monte Carlo risk engine** — 1-day / 1-week / 30-day simulations with percentile bands. Downside tail is highlighted. One number: **Value at Risk (VaR)** — your realistic worst case.
+- **One-move hedge** — Drag a slider to choose how much risk to remove. Watch VaR drop in real time. Veylix calculates the exact BTC short (Bybit futures data, funding rate cost included). In restricted regions it proxies via MSTR.
+- **AI scenario agent** — Powered by Claude. Select a named scenario ("FTX-style collapse", "black-swan crash"). It only adjusts visible simulation parameters so you can see exactly what changed — with and without your hedge.
+- **On-chain verification** — Every simulation is reproducible (fixed seed) and provably unchanged. A smart contract hashes the raw inputs on-chain as a timestamped record. Export the report and re-run it yourself.
 
-## How verification works
+*Modelling note: Zero-drift volatility model. Focuses on risk and dispersion, not predicted returns.*
 
-Trust shifts from *"trust Veylix's numbers"* to *"trust the math and an immutable timestamp."*
+![Hedge slider in action — watch VaR and cost update live](screenshots/hedge-demo.gif)
 
-1. You run a simulation on your inputs (fixed seed → fully reproducible).
-2. A smart contract hashes those raw inputs and writes the hash to the blockchain — timestamped and unchangeable.
-3. You export a report containing the exact inputs and the hash method.
-4. Re-run those inputs yourself: you get the same hash. If it matches the on-chain record, the numbers are real — not made up, cherry-picked, or changed after the fact. Alter a single value, and the hashes won't match.
+## How the verification actually works
 
-## Try it
+Trust moves from "trust Veylix" to "trust the math + immutable record."
 
-- **Live demo:** https://team-veylix-r656.vercel.app
-- **Local:** clone the repo and open `Veylix (standalone).html` in any modern browser — no install, no build step.
+1. Run a simulation (fixed seed = fully reproducible).
+2. Smart contract hashes the exact inputs and writes it on-chain with timestamp.
+3. Export the report containing inputs + hash method.
+4. Re-run the same inputs locally → identical hash. If it matches the on-chain record, nothing was altered.
 
-## Repo
+This is the part institutions take for granted. Retail almost never gets it.
 
-- `Veylix (standalone).html` — the single-file app.
-- `docs/UX_REQUIREMENTS.md` — UX requirements and MVP acceptance criteria.
+## Quick start
 
-## Track
+**Live:** [team-veylix-r656.vercel.app](https://team-veylix-r656.vercel.app)
 
-Built for the **Encode Vibe Coding Hackathon** — *BGA AI Trading & Strategy* track (Blockchain for Good Alliance). The track rewards fairer systems over higher returns: reducing the information asymmetry between retail and institutions, and building healthier markets rather than extractive behaviour. That is exactly Veylix's thesis.
+**Local (zero install):**  
+Clone the repo and open `veylix.html` (rename the current "Veylix (standalone).html" — the current filename is ugly) in any modern browser.
+
+## Built for
+
+Encode Vibe Coding Hackathon — BGA AI Trading & Strategy track (Blockchain for Good Alliance). The track rewards systems that reduce information asymmetry between retail and institutions rather than extractive behaviour. That is Veylix's thesis.
 
 ## Team
 
-Veylix — Raj, Ashish, Jia (engineering), Patti (research, UX & design), Terry (product).
+- Raj, Ashish, Jia — Engineering  
+- **Patti** — Research, UX & Design  
+- Terry — Product
 
----
+## Important
 
-*Educational use only. Veylix surfaces and explains risk; it does not provide investment advice or execute trades.*
+Educational use only. Veylix surfaces and explains risk. It does not provide investment advice or execute trades.
