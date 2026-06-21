@@ -1,11 +1,13 @@
 @import "tailwindcss";
 
 /*
- * Veylix theme tokens.
- * The detailed visual identity is themed later (see docs / UX requirements);
- * these tokens give a tasteful, on-brand neutral baseline and a single place
- * to re-theme. Palette: dark cool-ink background, amber accent, coral = downside,
- * teal = upside. Numbers use a monospace face with tabular figures.
+ * Veylix theme tokens — single source of truth for the whole app.
+ * Dark cool-ink palette, amber accent, coral = downside, teal = upside.
+ * Numbers use a monospace face with tabular figures.
+ *
+ * NOTE: the RainbowKit wallet theme in src/app/providers.tsx must use literal
+ * hex strings (its JS API can't read CSS variables). Those hexes mirror the
+ * values below — keep them in sync: accent (#f5a524) and background (#0a0e14).
  */
 :root {
   /* Surfaces — deep cool-ink, slightly blue; lifted panels; hairline borders */
@@ -19,9 +21,13 @@
   --muted: #8b97ad;
 
   /* Meaning colours (reserved — never decoration) */
-  --accent: #f5a524; /* amber — used sparingly */
-  --downside: #ff6f6f; /* coral */
-  --upside: #4fd1c5; /* teal */
+  --accent: #f5a524;            /* amber — used sparingly */
+  --accent-foreground: #0a0e14; /* text/icon on an amber fill */
+  --downside: #ff6f6f;          /* coral */
+  --upside: #4fd1c5;            /* teal */
+
+  /* Chart chrome (structural, not meaning) */
+  --chart-grid: #1e2d45;        /* cone gridlines */
 }
 
 @theme inline {
@@ -32,8 +38,10 @@
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
   --color-downside: var(--downside);
   --color-upside: var(--upside);
+  --color-chart-grid: var(--chart-grid);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

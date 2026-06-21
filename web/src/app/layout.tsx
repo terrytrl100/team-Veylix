@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Veylix — see the consequence first",
+  title: "Veylix — Institutional-grade tools, for everyone",
   description:
     "Pre-trade risk visibility for retail crypto. Educational, not investment advice.",
 };
