@@ -1,56 +1,119 @@
-# Veylix
+<div align="center">
 
-**Pre-trade risk visibility for retail crypto.**  
-*See the consequence first.* 🛡️
+# ⚡ Veylix
 
-> Retail traders can open, close, or hedge positions in seconds. They cannot easily see how those moves reshape their portfolio's realistic downside **before** they commit.
+### *See the consequence first.*
 
-Veylix puts institutional-grade risk tools (Monte Carlo simulation, VaR, dynamic hedging) into a single clean interface that runs in any browser. It is an **education and transparency tool only** — it never recommends positions or predicts prices.
+**Institutional-grade risk visibility for retail crypto — free, in your browser, with the math on screen.**
 
-**[🚀 Try the live demo](https://team-veylix-r656.vercel.app)**
+[![Live Demo](https://img.shields.io/badge/▶_LIVE_DEMO-team--veylix.vercel.app-3FB8A0?style=for-the-badge)](https://team-veylix-r656.vercel.app/)
+[![License](https://img.shields.io/badge/LICENSE-MIT-7E8AF5?style=for-the-badge)](#-license)
+[![Hackathon](https://img.shields.io/badge/ENCODE_×_BGA-AI_Trading_&_Strategy-FF6F6F?style=for-the-badge)](#-built-for)
+[![Status](https://img.shields.io/badge/STATUS-Live_MVP-E6A23C?style=for-the-badge)](#)
 
-![Veylix main interface](screenshots/hero.png)
+</div>
 
-## What it actually does
+---
 
-- **Live portfolio view** — Connect Arbitrum wallet. See real holdings as a pie chart + per-asset risk table (beta to BTC + idiosyncratic risk). Every metric has clear tooltips.
-- **Monte Carlo risk engine** — 1-day / 1-week / 30-day simulations with percentile bands. Downside tail is highlighted. One number: **Value at Risk (VaR)** — your realistic worst case.
-- **One-move hedge** — Drag a slider to choose how much risk to remove. Watch VaR drop in real time. Veylix calculates the exact BTC short (Bybit futures data, funding rate cost included). In restricted regions it proxies via MSTR.
-- **AI scenario agent** — Powered by Claude. Select a named scenario ("FTX-style collapse", "black-swan crash"). It only adjusts visible simulation parameters so you can see exactly what changed — with and without your hedge.
-- **On-chain verification** — Every simulation is reproducible (fixed seed) and provably unchanged. A smart contract hashes the raw inputs on-chain as a timestamped record. Export the report and re-run it yourself.
+> ### The crypto market isn't a fair fight.
+> The big funds run risk simulations on supercomputers — they know exactly what they could lose before they place a single trade. **You get a candle chart and a prayer.**
+>
+> Around **75–80% of retail traders lose money** — not because they picked the wrong coin, but because nothing ever showed them their downside *before* they clicked buy.
+>
+> **Veylix closes that gap.** See — before you act — how your positions and hedges reshape the full range of where your portfolio could land. Institutional risk math, in plain language, for free.
 
-*Modelling note: Zero-drift volatility model. Focuses on risk and dispersion, not predicted returns.*
+<!-- 💡 Drop a hero screenshot or demo GIF right here for maximum impact:  ![Veylix in action](docs/demo.gif) -->
 
-![Hedge slider in action — watch VaR and cost update live](screenshots/hedge-demo.gif)
+---
 
-## How the verification actually works
+## ✨ What it does
 
-Trust moves from "trust Veylix" to "trust the math + immutable record."
+|     |     |
+| --- | --- |
+| 🔮 **See your real downside** | A live Monte Carlo simulation of where your portfolio could land over the next day, week, or month — distilled into the one number that matters: your realistic worst case (**Value at Risk**). |
+| 🎚️ **Hedge in one move** | Drag a slider to choose how much risk to hedge away and watch your worst case shrink in real time — with the cost priced **live from Bybit funding rates**, so you see what protection actually costs. |
+| 🌍 **Hedge anywhere** | Can't legally short crypto where you live (e.g. the UK)? Veylix hedges via **MSTR** as a Bitcoin proxy — protection isn't gated by geography. |
+| 🤖 **Stress-test with AI** | An AI agent reshapes the simulation to any scenario you name — *"FTX-style collapse," "black-swan crash," "war"* — and shows how you'd hold up, **with and without** your hedge. |
+| 🔍 **No black box** | Every number explained in plain English, methodology on screen. **No advice. No price predictions.** We model risk and dispersion, not returns. |
+| 🆓 **Free & private** | Runs entirely client-side in your browser. No signup. Your portfolio never leaves your machine. |
 
-1. Run a simulation (fixed seed = fully reproducible).
-2. Smart contract hashes the exact inputs and writes it on-chain with timestamp.
-3. Export the report containing inputs + hash method.
-4. Re-run the same inputs locally → identical hash. If it matches the on-chain record, nothing was altered.
+---
 
-This is the part institutions take for granted. Retail almost never gets it.
+## 🔬 Reproducible by design
 
-## Quick start
+The trust model is simple: **don't trust us — re-run the math.**
 
-**Live:** [team-veylix-r656.vercel.app](https://team-veylix-r656.vercel.app)
+- 🎯 **Fixed seed** (`0x5EED5`) — the same inputs always produce the same numbers.
+- 📉 **Zero-drift model** — we model *dispersion, not predicted returns*. Nothing to overfit, nothing to cherry-pick.
+- 🧩 **100% client-side** — no backend, no server to trust. Open the file, read the code, run it yourself.
 
-**Local (zero install):**  
-Clone the repo and open `veylix.html` (rename the current "Veylix (standalone).html" — the current filename is ugly) in any modern browser.
+> Prediction is what burns retail. **Clarity is what protects it.**
 
-## Built for
+---
 
-Encode Vibe Coding Hackathon — BGA AI Trading & Strategy track (Blockchain for Good Alliance). The track rewards systems that reduce information asymmetry between retail and institutions rather than extractive behaviour. That is Veylix's thesis.
+## 🚀 Try it
 
-## Team
+**▶ Live demo:** **https://team-veylix-r656.vercel.app/**
 
-- Raj, Ashish, Jia — Engineering  
-- **Patti** — Research, UX & Design  
-- Terry — Product
+**Run locally** — no install, no build step:
 
-## Important
+```bash
+git clone https://github.com/terrytrl100/team-Veylix.git
+cd team-Veylix
+# open "Veylix (standalone).html" in any modern browser
+```
 
-Educational use only. Veylix surfaces and explains risk. It does not provide investment advice or execute trades.
+---
+
+## 🧠 Under the hood
+
+- **Single-file, client-side app** — `Veylix (standalone).html`, no backend.
+- **Risk engine** — ~3,000-path Monte Carlo + Value-at-Risk across multiple horizons; single-factor (BTC) + idiosyncratic noise; zero-drift.
+- **Live market data** — Bybit API for historical prices and futures funding rates (the *real, current* cost of a hedge — not a guess).
+- **Explainable AI layer** — turns every metric and scenario into plain language.
+
+---
+
+## 🛣️ Roadmap
+
+- 🔗 **On-chain verification** — hash each run's raw inputs to the blockchain for trustless, timestamped proof anyone can independently re-verify.
+- 👛 **WalletConnect + on-chain wallets** — read live holdings straight from the chain.
+- 🌐 **Multi-exchange coverage** — beyond a single connection.
+- 🚨 **Risk alerts** — liquidity, concentration, and rug-pull flags.
+- 🏢 **White-label engine** — an embeddable risk layer exchanges can license.
+
+---
+
+## 🏆 Built for
+
+**Encode × Blockchain for Good Alliance** — *AI Trading & Strategy* track.
+The brief rewards **fairer systems over higher returns** — reducing the information gap between retail and institutions, and building healthier markets rather than extractive ones. That's Veylix's entire thesis: *we never profit from you trading more, and we never tell you what to do.*
+
+---
+
+## 👥 Team
+
+| Member | Role |
+| --- | --- |
+| **Terry** | Product & vision |
+| **Ashish** | Tech lead — architecture & build |
+| **Raj** | Engineering & core contributor |
+| **Jia** | Engineering |
+| **Lilian** | Engineering |
+| **Patti** | UX, design & research |
+
+---
+
+## 📄 License
+
+**MIT** — open source. Use it, fork it, learn from it.
+
+---
+
+<div align="center">
+
+### Veylix — *see the consequence first.*
+
+<sub>Educational use only. Veylix surfaces and explains risk; it does not provide investment advice or execute trades.</sub>
+
+</div>
